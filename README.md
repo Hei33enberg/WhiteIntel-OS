@@ -14,8 +14,8 @@ The corporate-ownership & sanctions intelligence layer for AI agents — built f
 [![CI](https://github.com/Hei33enberg/whiteintel-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/Hei33enberg/whiteintel-mcp-server/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-2f7d4f.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-7c3aed.svg)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-16%20live-00ff7f)](https://whiteintel.dev/developers)
-[![Corpus](https://img.shields.io/badge/corpus-75.7M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
+[![Tools](https://img.shields.io/badge/tools-18%20live-00ff7f)](https://whiteintel.dev/developers)
+[![Corpus](https://img.shields.io/badge/corpus-72.6M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
 [![Sources](https://img.shields.io/badge/sources-27%20fused-2f7d4f)](https://whiteintel.dev/sources)
 [![whiteintel.dev](https://img.shields.io/badge/site-whiteintel.dev-5af082)](https://whiteintel.dev)
 
@@ -113,7 +113,7 @@ Check **`get_pricing`** first — it returns the full price list plus this flow 
 
 ## The corpus
 
-**75.7M+ entities across 27 fused registries** — every claim cited, every edge traced:
+**72.6M+ entities across 27 fused registries** — every claim cited, every edge traced:
 
 | Source | What | Coverage |
 |---|---|---|
@@ -146,7 +146,7 @@ Existing corporate-ownership tools were built for compliance analysts clicking w
 
 ## Data & honesty
 
-- **Live corpus:** ~75.7M entities across 27 fused registries. Live counts: [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats).
+- **Live corpus:** ~72.6M entities across 27 fused registries. Live counts: [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats).
 - An absent edge means "not yet observed", not "does not exist".
 - Investigative **decision-support**, not a legal determination of beneficial ownership.
 - Semantic search coverage grows as the embedding backfill completes — lexical search always covers the full corpus.
