@@ -1,32 +1,72 @@
+<div align="center">
+
+<img src="https://whiteintel.dev/brand/logo-mark-512.png" width="132" alt="WhiteIntel" />
+
 # @whiteintel/mcp-server
+
+**They trace names. We trace who really owns them.**
+
+The corporate-ownership & sanctions intelligence layer for AI agents — built for the agentic era. WhiteIntel turns public-registry and offshore-leak data into MCP-native intelligence primitives — **entity search, semantic discovery, ownership-path traversal, sanctions screening, offshore-exposure detection, and fully cited dossiers** — so any AI agent can investigate a company, trace its ultimate beneficial owner, and flag risk in one conversation. Your agent isn't querying a database — it's conducting an investigation.
+
+**[Read the Methodology →](https://whiteintel.dev/methodology)**
 
 [![npm](https://img.shields.io/npm/v/@whiteintel/mcp-server.svg)](https://www.npmjs.com/package/@whiteintel/mcp-server)
 [![CI](https://github.com/Hei33enberg/whiteintel-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/Hei33enberg/whiteintel-mcp-server/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-2f7d4f.svg)](LICENSE)
-[![MCP](https://img.shields.io/badge/Model_Context_Protocol-server-2f7d4f.svg)](https://modelcontextprotocol.io)
+[![MCP](https://img.shields.io/badge/MCP-compatible-7c3aed.svg)](https://modelcontextprotocol.io)
+[![Tools](https://img.shields.io/badge/tools-16%20live-00ff7f)](https://whiteintel.dev/developers)
+[![Corpus](https://img.shields.io/badge/corpus-75.7M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
+[![Sources](https://img.shields.io/badge/sources-27%20fused-2f7d4f)](https://whiteintel.dev/sources)
+[![whiteintel.dev](https://img.shields.io/badge/site-whiteintel.dev-5af082)](https://whiteintel.dev)
 
-**Trace ownership. Expose the network.** A [Model Context Protocol](https://modelcontextprotocol.io)
-server that gives any AI agent (Claude Desktop, Cursor, …) **corporate & offshore
-ownership intelligence** from [WhiteIntel](https://whiteintel.dev): look up companies,
-search entities (companies **and** people) **by name or meaning**, screen sanctions,
-and trace ownership chains to the ultimate beneficial owner.
+</div>
 
-**Freemium** — works anonymously on the free tier, or set `WHITEINTEL_API_KEY` to
-authenticate as your plan and lift the limits (see [Configuration](#configuration)).
-Forwards to WhiteIntel's public REST API
-(`https://whiteintel.dev/api/public/*`) — [OpenAPI spec](https://whiteintel.dev/api/public/openapi.json).
+---
 
-## Install
+## What's live today (0.7.0)
 
-No install needed — run via `npx`:
+**One command, any MCP agent:**
 
 ```bash
 npx -y @whiteintel/mcp-server
 ```
 
-### Claude Desktop / Cursor
+…starts an MCP server with **16 tools** that give any AI agent — Claude Desktop, Cursor, Cline, Windsurf, or your own runtime — **full corporate-ownership intelligence**: search by name or meaning, trace ownership chains to the UBO, screen sanctions across OFAC/EU/UN/UK, detect offshore layering, pull fully cited dossiers with financials and asset layers, and even purchase deeper intelligence through agent-initiated Stripe checkout. Every claim cited to its source, every edge traced to a registry record.
 
-Add to your MCP client config:
+| Tool | What it does | Category |
+|---|---|---|
+| `search_entities` | Search the corpus (companies + people) by name → entity ids | 🔍 Discovery |
+| `semantic_search` | Meaning-based search (BGE-M3 vector ANN) — find entities by profile, not keywords | 🔍 Discovery |
+| `find_similar` | "More like this" — nearest entities to a known id, for peer discovery and clustering | 🔍 Discovery |
+| `search_companies` | Free-text company-name search → registration number | 🔍 Discovery |
+| `lookup_company` | UK company by Companies House number → record + ownership graph | 📋 Lookup |
+| `lookup_by_identifier` | Resolve by strong id — LEI, OFAC/EU/UN/UK sanctions id, UEN, NIP, SEC CIK, KRS, GB-COH | 📋 Lookup |
+| `get_entity` | Full record for one entity + its direct relationships | 📋 Lookup |
+| `resolve` | Batch-resolve names or `scheme:value` ids → canonical entity ids + confidence | 📋 Lookup |
+| `get_dossier` | Structured, fully-cited dossier: identity, ownership/UBO chain, risk, provenance | 📊 Intelligence |
+| `trace_ownership_path` | Walk ownership upward to the ultimate beneficial owner | 📊 Intelligence |
+| `get_sanctions` | Sanctions exposure (OFAC/EU/UN/UK) for entity and its resolved cluster siblings | 🛡️ Risk |
+| `check_offshore_exposure` | Flag sanctioned + secrecy-jurisdiction hops in the ownership chain | 🛡️ Risk |
+| `get_company_details` | UK register detail: address, status, SIC, filings, charges, former names | 📋 Lookup |
+| `get_financials` | Filed UK financials YoY (turnover, profit, net assets, cash, employees) | 📊 Intelligence |
+| `get_pulse` | Live corpus activity feed — recent ownership/control changes, sourced | 📊 Intelligence |
+| `get_pricing` | Full price list + machine-readable purchase flow (static, no network call) | 💳 Commerce |
+| `buy_dossier` | Start a one-off dossier purchase via guest Stripe Checkout → `checkout_url` | 💳 Commerce |
+| `claim_dossier` | Redeem a paid session for a 90-day access token (idempotent) | 💳 Commerce |
+
+**18 callable tools** — 4 Discovery + 4 Lookup + 4 Intelligence + 2 Risk + 2 Commerce + 1 Feed + 1 Pricing. All read-only except `buy_dossier` (opens Stripe — money moves only when a human completes it) and `claim_dossier` (redeems an already-paid session). Ids flow between tools: search → get_dossier → trace_ownership_path → get_sanctions.
+
+## Quickstart (60 seconds)
+
+> **Distribution:** the package is on npm — `npx -y @whiteintel/mcp-server` Just Works.
+
+**1. Run it.** No key needed — works anonymously on the free tier:
+
+```bash
+npx -y @whiteintel/mcp-server
+```
+
+**2a. Claude Desktop / Cursor** — add to your MCP config:
 
 ```json
 {
@@ -40,65 +80,120 @@ Add to your MCP client config:
 }
 ```
 
-The `env` block is optional — omit it to use the anonymous free tier.
+**2b. Claude Code CLI:**
 
-## Tools
+```bash
+claude mcp add whiteintel -- npx -y @whiteintel/mcp-server
+```
 
-| Tool | What it does |
-| --- | --- |
-| `lookup_company` | UK company by Companies House number → record + ownership graph (officers, PSCs, parent/subsidiary edges). |
-| `search_companies` | Free-text company-name search → registration number. |
-| `search_entities` | Search the corpus (companies + people) by name → entity ids. |
-| `get_entity` | Full record for one entity + its direct relationships. |
-| `get_dossier` | Structured, fully-cited dossier: cross-source identity, ownership/UBO chain, risk signals, provenance. Optional `token` (from `claim_dossier`) unlocks the paid depth. |
-| `trace_ownership_path` | Walk ownership upward from a root entity to the ultimate beneficial owner. |
-| `lookup_by_identifier` | Resolve an entity by a strong id — LEI, OFAC/EU/UN/UK sanctions id, UEN, NIP, SEC CIK, KRS, GB-COH. |
-| `get_sanctions` | An entity's sanctions exposure (OFAC/EU/UN/UK) for it and its resolved cluster siblings, with sources. |
-| `check_offshore_exposure` | Walk the ownership chain and flag sanctioned + secrecy-jurisdiction hops (offshore-layering lead). |
-| `get_company_details` | UK register detail: registered address, status, type, incorporation date, SIC codes + the filing/compliance layer (accounts, overdue flags, charges, former names). |
-| `get_financials` | Filed UK financials year-over-year (turnover, profit, net assets, cash, employees) from Companies House iXBRL accounts. |
-| `get_pulse` | The live corpus activity feed — recent ownership/control changes, newest first, each sourced; optional `since` cursor to stream only what's new. |
-| `resolve` | Batch-resolve a list of names or `scheme:value` ids → canonical entity ids + confidence, in one call (enrich a whole supplier / portfolio list). |
-| `semantic_search` | **Meaning-based** entity search (BGE-M3 vector ANN over the resolved dossier cards) — find companies & people whose profile is semantically closest to a natural-language query, even with no keyword match. Complements the lexical `search_entities`. |
-| `find_similar` | "More like this" — the corpus entities nearest a given `entity_id` in meaning, for peer discovery and clustering around a known entity. |
-| `get_pricing` | The honest price list (one-off dossiers, packs, subscriptions, metered API) + the exact machine flow for buying access. Static, no network call. |
-| `buy_dossier` | Start a one-off dossier purchase via guest Stripe Checkout (Standard €39 / Premium €99, optional 5/25 packs) → returns a `checkout_url`. |
-| `claim_dossier` | Redeem a paid Checkout session (`session_id`) for a 90-day entity-scoped access `token`. Idempotent. |
+**2c. One-click:** add WhiteIntel to your editor at **[whiteintel.dev/developers](https://whiteintel.dev/developers)**.
 
-All lookup tools are **read-only**; the only side-effectful tools are `buy_dossier` (opens a Stripe Checkout — money moves only when a human completes it) and `claim_dossier` (redeems an already-paid session). Ids flow between tools: `search_entities` / `semantic_search` / `search_companies` / `resolve` / `lookup_by_identifier` return ids → feed them to `get_dossier` / `trace_ownership_path` / `find_similar` / `get_sanctions`.
+The `env` block is optional — omit it to use the anonymous free tier. Set `WHITEINTEL_API_KEY=wi_…` to authenticate as your plan and lift limits.
+
+### Try it
+
+> **You:** "Who ultimately owns Revolut? Check sanctions on the whole chain."
+>
+> **Agent:** calls `search_entities({ query: "Revolut" })` → `trace_ownership_path({ id })` → `get_sanctions({ id })` for each hop → a fully cited ownership chain with sanctions screening at every level. Done.
+
+> **You:** "Find companies similar to Wirecard and check for offshore exposure."
+>
+> **Agent:** calls `find_similar({ entity_id })` → `check_offshore_exposure({ id })` → flagged secrecy-jurisdiction hops and sanctioned intermediaries across the peer set.
 
 ## Agents can pay
 
-An agent can buy the paid depth of a dossier end-to-end, no WhiteIntel account needed:
+An agent can buy the paid depth of a dossier end-to-end, **no WhiteIntel account needed:**
 
-1. **`buy_dossier`** `{ tier: "standard" | "premium", entity_id }` → returns a Stripe `checkout_url`. Standard (€39) unlocks the full multi-hop UBO chain + year-over-year financial history; Premium (€99) additionally unlocks itemised assets (vessels, aircraft, securities, real estate). Packs of 5/25 grant reusable report credits.
-2. A **human (or payment-capable agent) completes payment** at the `checkout_url` — Stripe collects an email and redirects back to whiteintel.dev with `?session_id=cs_…`.
-3. **`claim_dossier`** `{ session_id }` → `{ token, entity_id, tier }`. Idempotent; returns `402 not_paid` until payment completes.
-4. **`get_dossier`** `{ id, token }` → the unlocked, fully-cited dossier JSON. Tokens are entity-scoped and valid for 90 days.
+1. **`buy_dossier`** `{ tier: "standard" | "premium", entity_id }` → returns a Stripe `checkout_url`. Standard (€39) unlocks the full multi-hop UBO chain + financials; Premium (€99) adds vessels, aircraft, property, adverse media.
+2. A **human completes payment** at the `checkout_url` — Stripe collects an email and redirects back.
+3. **`claim_dossier`** `{ session_id }` → `{ token, entity_id, tier }`. Idempotent; returns `402` until paid.
+4. **`get_dossier`** `{ id, token }` → the unlocked, fully-cited dossier JSON. Tokens valid 90 days.
 
 Check **`get_pricing`** first — it returns the full price list plus this flow in machine-readable form.
 
+## The corpus
+
+**75.7M+ entities across 27 fused registries** — every claim cited, every edge traced:
+
+| Source | What | Coverage |
+|---|---|---|
+| **OpenOwnership** | UK PSCs (Persons with Significant Control) | 🇬🇧 Full |
+| **GLEIF** | Global LEI registry — legal entity identifiers | 🌍 Global |
+| **ACRA Singapore** | Singapore company registry | 🇸🇬 Full |
+| **ICIJ Offshore Leaks** | Panama Papers, Paradise Papers, Pandora Papers | 🌍 Offshore |
+| **SEC EDGAR** | US securities filings + beneficial ownership | 🇺🇸 Full |
+| **UK Companies House** | Full UK register — bulk + live filing stream | 🇬🇧 Full |
+| **FAA** | US aircraft registry (tail numbers → owners) | 🇺🇸 Full |
+| **France SIRENE** | French company register | 🇫🇷 Full |
+| **Brazil RFB** | Brazilian federal revenue — CNPJ register | 🇧🇷 Full |
+| **OFAC / EU / UN / UK** | Consolidated sanctions lists | 🌍 Live |
+| **+ 17 more** | registries, sanctions lists & UBO registers | 🌍 Growing |
+
+**Semantic search** (`semantic_search` / `find_similar`) runs over resolved dossier cards using BGE-M3 embeddings; coverage grows as the embedding backfill completes. Lexical `search_entities` always covers the full corpus.
+
+## Why WhiteIntel
+
+> **What's in a name:** White + Intel — **white** as in transparent, open, cited; **intel** as in intelligence, not data. We don't sell raw records — we sell resolution, traversal, and cited delivery.
+
+Existing corporate-ownership tools were built for compliance analysts clicking web forms. WhiteIntel is the intelligence layer for the agentic era — where the investigator might be a person, an autonomous agent, or an AI workflow, and they all need the same cited, traversed, risk-scored intelligence.
+
+- **Cited, not claimed.** Every ownership edge, every sanctions flag, every risk signal is traced to a public-registry record with a real effective date. We don't invent or infer — if a source doesn't say it, we don't.
+- **MCP-native, not another API wrapper.** Semantic intelligence primitives — not REST endpoints shoe-horned into tool definitions. One command, any MCP agent.
+- **Freemium by design.** The public corpus is free to explore — no sign-in, no API key, no paywall on search. You pay only for depth: full UBO chains, asset layers, monitoring, and export.
+- **Agents can pay.** The only MCP server where an agent can investigate a company, decide it needs the paid dossier, buy it via Stripe Checkout, and receive the cited intelligence — end-to-end, no human portal needed.
+- **Honest about gaps.** An absent edge means "not yet observed", not "does not exist". Investigative **decision-support**, not a legal determination of beneficial ownership.
+- **No lock-in.** MIT license. Your agent, your data, your investigation.
+
 ## Data & honesty
 
-- **Live corpus:** ~59.6M entities across 27 fused registries — OpenOwnership,
-  France SIRENE, Brazil RFB, UK Companies House (bulk + live), GLEIF, ACRA Singapore,
-  ICIJ Offshore Leaks, SEC EDGAR, offshore UBO registries, and the OFAC/EU/UN/UK
-  sanctions lists — cross-source-resolved (a sanctioned party linked to its
-  offshore/registry records). Live counts: whiteintel.dev/api/public/stats.
-- **Semantic search** (`semantic_search` / `find_similar`) runs over resolved dossier
-  cards; coverage grows as the embedding backfill completes, so meaning-based hits can
-  be sparse until then — lexical `search_entities` always covers the full corpus.
+- **Live corpus:** ~75.7M entities across 27 fused registries. Live counts: [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats).
 - An absent edge means "not yet observed", not "does not exist".
 - Investigative **decision-support**, not a legal determination of beneficial ownership.
+- Semantic search coverage grows as the embedding backfill completes — lexical search always covers the full corpus.
 
 ## Configuration
 
 | Env var | Default | Purpose |
-| --- | --- | --- |
-| `WHITEINTEL_API_KEY` | _(none)_ | Optional `wi_` key (whiteintel.dev → Settings → API keys). Forwarded as a Bearer token to authenticate as your plan and lift free-tier limits. |
+|---|---|---|
+| `WHITEINTEL_API_KEY` | _(none)_ | Optional `wi_` key ([whiteintel.dev → Settings → API keys](https://whiteintel.dev/settings)). Authenticates as your plan, lifts free-tier limits. |
 | `WHITEINTEL_API_BASE` | `https://whiteintel.dev` | API origin (SSRF-guarded to whiteintel.dev hosts). |
 | `WHITEINTEL_TIMEOUT_MS` | `30000` | Per-request timeout. |
 
+## Ecosystem
+
+WhiteIntel is part of a growing intelligence platform:
+
+- **[whiteintel.dev](https://whiteintel.dev)** — the web app: search, graph, dossiers, Pulse feed, monitoring
+- **[WhiteIntel API](https://whiteintel.dev/developers)** — REST API with OpenAPI spec, the same endpoints this MCP server calls
+- **[WhiteIntel Pulse](https://whiteintel.dev/feed)** — live ownership/control change feed across the corporate graph
+- **[@whiteintel/mcp-server](https://www.npmjs.com/package/@whiteintel/mcp-server)** — this package: the MCP intelligence layer
+
+## Who's behind this
+
+WhiteIntel is built and directed by [@Hei33enberg](https://github.com/Hei33enberg) — a self-funded, independent intelligence project. No venture capital, no data brokers, no compromises on citation integrity.
+
+*Swiss governance · Honest by construction*
+
+## Get on the graph
+
+```bash
+npx -y @whiteintel/mcp-server     # 18 tools, any MCP agent
+```
+
+- **Install** — drop the server into Claude Desktop, Cursor, Cline, Windsurf, or your own runtime (see [Quickstart](#quickstart-60-seconds)).
+- **No key needed** — works on the anonymous free tier out of the box.
+- **Go deeper** — set `WHITEINTEL_API_KEY` for your plan's full depth.
+- **Explore the corpus** — [whiteintel.dev](https://whiteintel.dev) — free to search, no sign-in.
+- **Own it** — [star the repo](https://github.com/Hei33enberg/whiteintel-mcp-server), build on the API, or integrate into your agent pipeline. MIT, no lock-in.
+
+## Contributing
+
+Issues, PRs, and tool ideas welcome. Start with the [CHANGELOG](./CHANGELOG.md) for what's shipped and what's next. If you're building an agent that uses corporate intelligence, we want to hear about it — [intel@whiteintel.dev](mailto:intel@whiteintel.dev).
+
+**Community:** [GitHub Issues](https://github.com/Hei33enberg/whiteintel-mcp-server/issues) for bugs and features, [GitHub Discussions](https://github.com/Hei33enberg/whiteintel-mcp-server/discussions) for design and help.
+
+Web: [whiteintel.dev](https://whiteintel.dev) · npm: [@whiteintel/mcp-server](https://www.npmjs.com/package/@whiteintel/mcp-server) · Releases: [GitHub](https://github.com/Hei33enberg/whiteintel-mcp-server/releases)
+
 ## License
 
-MIT © whiteintel.dev
+[MIT](./LICENSE) © whiteintel.dev
