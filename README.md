@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://whiteintel.dev/brand/logo-mark-512.png" width="132" alt="WhiteIntel" />
+<img src="https://raw.githubusercontent.com/Hei33enberg/whiteintel-mcp-server/main/logo-mark-512.png" width="132" alt="WhiteIntel" />
 
 # @whiteintel/mcp-server
 
