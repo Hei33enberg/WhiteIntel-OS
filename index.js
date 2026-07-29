@@ -135,7 +135,11 @@ async function checkoutPost(payload) {
   let body;
   try { body = JSON.parse(text); } catch { body = text; }
   if (!res.ok) {
-    const detail = body && typeof body === "object" ? (body.error || body.detail || body.message) : null;
+    // `message` first: when the service sends prose it is the actionable half. 422
+    // insufficient_data, for instance, carries "no ownership links, company details or
+    // financials on file" — an agent can act on that (pick another entity) where the bare
+    // error code just looks like a fault. Falls back to the code when there is no prose.
+    const detail = body && typeof body === "object" ? (body.message || body.error || body.detail) : null;
     if (res.status >= 500 || res.status === 429) {
       const ra = res.headers.get("retry-after");
       throw new Error(`The WhiteIntel checkout service is temporarily unavailable (${res.status}${detail ? `: ${detail}` : ""}).` + (ra ? ` Retry after ${ra}s.` : " Please retry shortly."));
