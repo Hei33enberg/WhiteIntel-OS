@@ -15,7 +15,7 @@ The corporate-ownership & sanctions intelligence layer for AI agents — built f
 [![License: MIT](https://img.shields.io/badge/License-MIT-2f7d4f.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-7c3aed.svg)](https://modelcontextprotocol.io)
 [![Tools](https://img.shields.io/badge/tools-18%20live-00ff7f)](https://whiteintel.dev/developers)
-[![Corpus](https://img.shields.io/badge/corpus-72.6M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
+[![Corpus](https://img.shields.io/badge/corpus-87.8M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
 [![Sources](https://img.shields.io/badge/sources-27%20fused-2f7d4f)](https://whiteintel.dev/sources)
 [![whiteintel.dev](https://img.shields.io/badge/site-whiteintel.dev-5af082)](https://whiteintel.dev)
 
@@ -31,7 +31,7 @@ The corporate-ownership & sanctions intelligence layer for AI agents — built f
 npx -y @whiteintel/mcp-server
 ```
 
-…starts an MCP server with **16 tools** that give any AI agent — Claude Desktop, Cursor, Cline, Windsurf, or your own runtime — **full corporate-ownership intelligence**: search by name or meaning, trace ownership chains to the UBO, screen sanctions across OFAC/EU/UN/UK, detect offshore layering, pull fully cited dossiers with financials and asset layers, and even purchase deeper intelligence through agent-initiated Stripe checkout. Every claim cited to its source, every edge traced to a registry record.
+…starts an MCP server with **18 tools** that give any AI agent — Claude Desktop, Cursor, Cline, Windsurf, or your own runtime — **full corporate-ownership intelligence**: search by name or meaning, trace ownership chains to the UBO, screen sanctions across OFAC/EU/UN/UK, detect offshore layering, pull fully cited dossiers with financials and asset layers, and even purchase deeper intelligence through agent-initiated Stripe checkout. Every claim cited to its source, every edge traced to a registry record.
 
 | Tool | What it does | Category |
 |---|---|---|
@@ -113,7 +113,7 @@ Check **`get_pricing`** first — it returns the full price list plus this flow 
 
 ## The corpus
 
-**72.6M+ entities across 27 fused registries** — every claim cited, every edge traced:
+**87.8M+ entities across 29 fused registries** — every claim cited, every edge traced:
 
 | Source | What | Coverage |
 |---|---|---|
@@ -146,7 +146,7 @@ Existing corporate-ownership tools were built for compliance analysts clicking w
 
 ## Data & honesty
 
-- **Live corpus:** ~72.6M entities across 27 fused registries. Live counts: [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats).
+- **Live corpus:** ~87.8M entities across 29 fused registries. Live counts: [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats).
 - An absent edge means "not yet observed", not "does not exist".
 - Investigative **decision-support**, not a legal determination of beneficial ownership.
 - Semantic search coverage grows as the embedding backfill completes — lexical search always covers the full corpus.
