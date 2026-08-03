@@ -7,7 +7,7 @@
  * search the corpus of companies and people, and trace ownership chains to the
  * ultimate beneficial owner.
  *
- * Data: ~87.8M entities fused across 29 public/semi-public registries — OpenOwnership,
+ * Data: ~100.6M entities fused across 29 public/semi-public registries — OpenOwnership,
  * GLEIF, ICIJ Offshore Leaks, SEC EDGAR, sanctions/PEP lists and more — cross-source
  * resolved onto one cited identity spine, plus live UK Companies House lookups.
  *
