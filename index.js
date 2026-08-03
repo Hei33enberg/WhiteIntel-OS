@@ -360,7 +360,7 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        kind: { type: "string", enum: ["ownership", "officer", "filing", "sanction", "asset", "status"], description: "Optional: filter by event kind." },
+        kind: { type: "string", enum: ["ownership", "filing"], description: "Optional: filter by event kind. Two are live — ownership (GLEIF control changes) and filing (UK Companies House accounts). Other types are reserved for future loaders and hold zero rows." },
         limit: { type: "number", minimum: 1, maximum: 100, description: "Max events (default 40)." },
         since: { type: "string", description: "Optional sync cursor (ISO-8601): pass the next_since from your last response to get only events ingested after it — poll this to monitor what's new." },
       },
