@@ -104,7 +104,7 @@ The `env` block is optional — omit it to use the anonymous free tier. Set `WHI
 
 An agent can buy the paid depth of a dossier end-to-end, **no WhiteIntel account needed:**
 
-1. **`buy_dossier`** `{ tier: "standard" | "premium", entity_id }` → returns a Stripe `checkout_url`. Standard (€39) unlocks the full multi-hop UBO chain + financials; Premium (€99) adds vessels, aircraft, property, adverse media.
+1. **`buy_dossier`** `{ tier: "standard" | "premium", entity_id }` → returns a Stripe `checkout_url`. Standard (€39) unlocks the full multi-hop UBO chain + financials; Premium (€99) adds aircraft, sanctioned vessels, property and an adverse-media scan.
 2. A **human completes payment** at the `checkout_url` — Stripe collects an email and redirects back.
 3. **`claim_dossier`** `{ session_id }` → `{ token, entity_id, tier }`. Idempotent; returns `402` until paid.
 4. **`get_dossier`** `{ id, token }` → the unlocked, fully-cited dossier JSON. Tokens valid 90 days.
