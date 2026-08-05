@@ -295,8 +295,8 @@ const TOOLS = [
       properties: {
         scheme: {
           type: "string",
-          enum: ["lei", "ofac", "eu", "un", "uk", "uen", "nip", "sec", "krs", "gb-coh", "siren"],
-          description: "Identifier scheme: lei | ofac | eu | un | uk | uen | nip | sec | krs | gb-coh | siren (French SIREN, 9 digits).",
+          enum: ["lei", "ofac", "eu", "un", "uk", "uen", "nip", "sec", "krs", "gb-coh", "siren", "br-cnpj"],
+          description: "Identifier scheme: lei | ofac | eu | un | uk | uen | nip | sec | krs | gb-coh | siren (French SIREN, 9 digits) | br-cnpj (Brazil RFB CNPJ; accepts 8-digit root or full 14-digit form 12.345.678/0001-95).",
         },
         value: { type: "string", maxLength: 100, description: "The identifier value (e.g. an LEI, an OFAC SDN uid, a Companies House number)." },
       },
@@ -356,11 +356,11 @@ const TOOLS = [
   {
     name: "get_pulse",
     description:
-      "The WhiteIntel Pulse activity feed: recent ownership / control changes across the corpus, newest first, each with a source registry. Use this to answer 'what changed recently / any recent ownership movements' or to monitor the corpus. Optional kind filter (ownership | officer | filing | sanction | asset | status).",
+      "The WhiteIntel Pulse activity feed: recent ownership / control changes across the corpus, newest first, each with a source registry. Use this to answer 'what changed recently / any recent ownership movements' or to monitor the corpus. The default (unfiltered) feed only returns events that carry a source URL. Optional kind filter — ownership | filing are cited; watchlist (OpenSanctions PEP listings) is opt-in and is currently uncited (source-url NULL for every row).",
     inputSchema: {
       type: "object",
       properties: {
-        kind: { type: "string", enum: ["ownership", "filing"], description: "Optional: filter by event kind. Two are live — ownership (GLEIF control changes) and filing (UK Companies House accounts). Other types are reserved for future loaders and hold zero rows." },
+        kind: { type: "string", enum: ["ownership", "filing", "watchlist"], description: "Optional: filter by event kind. `ownership` (GLEIF control changes) and `filing` (UK Companies House accounts) are cited. `watchlist` (OpenSanctions PEP listings) is currently uncited and is filtered OUT of the default feed — pass kind=watchlist explicitly if you want it." },
         limit: { type: "number", minimum: 1, maximum: 100, description: "Max events (default 40)." },
         since: { type: "string", description: "Optional sync cursor (ISO-8601): pass the next_since from your last response to get only events ingested after it — poll this to monitor what's new." },
       },
