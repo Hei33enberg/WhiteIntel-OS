@@ -289,14 +289,18 @@ const TOOLS = [
   {
     name: "lookup_by_identifier",
     description:
-      "Resolve an entity by a strong external identifier instead of a name — a LEI, OFAC SDN uid, EU/UN/UK sanctions id, Singapore UEN, Polish NIP, SEC CIK, Polish KRS, or UK Companies House number. Returns the single resolved entity (id, type, jurisdiction, identifier, risk) so you can pivot into get_entity / get_dossier / get_sanctions. Use this when you already hold a registry id and want the corpus node behind it.",
+      "Resolve an entity by a strong external identifier instead of a name — a LEI, OFAC SDN uid, EU/UN/UK sanctions id, Singapore UEN, SEC CIK, Polish KRS, UK Companies House number, French SIREN, or Brazil RFB CNPJ. Returns the single resolved entity (id, type, jurisdiction, identifier, risk) so you can pivot into get_entity / get_dossier / get_sanctions. Use this when you already hold a registry id and want the corpus node behind it.",
+    // LINEAR-5147: `nip` removed — no Polish NIP is stamped onto entities.identifier today
+    // (they live only in props->>'nip' on `krs:` rows), so the scheme resolved to nothing.
+    // Keep this enum aligned with app IDENTIFIER_SCHEMES; the server-side by-identifier
+    // route hard-rejects unknown schemes.
     inputSchema: {
       type: "object",
       properties: {
         scheme: {
           type: "string",
-          enum: ["lei", "ofac", "eu", "un", "uk", "uen", "nip", "sec", "krs", "gb-coh", "siren", "br-cnpj"],
-          description: "Identifier scheme: lei | ofac | eu | un | uk | uen | nip | sec | krs | gb-coh | siren (French SIREN, 9 digits) | br-cnpj (Brazil RFB CNPJ; accepts 8-digit root or full 14-digit form 12.345.678/0001-95).",
+          enum: ["lei", "ofac", "eu", "un", "uk", "uen", "sec", "krs", "gb-coh", "siren", "br-cnpj"],
+          description: "Identifier scheme: lei | ofac | eu | un | uk | uen | sec | krs | gb-coh | siren (French SIREN, 9 digits) | br-cnpj (Brazil RFB CNPJ; accepts 8-digit root or full 14-digit form 12.345.678/0001-95).",
         },
         value: { type: "string", maxLength: 100, description: "The identifier value (e.g. an LEI, an OFAC SDN uid, a Companies House number)." },
       },
@@ -307,7 +311,7 @@ const TOOLS = [
   {
     name: "get_sanctions",
     description:
-      "Return an entity's sanctions exposure: every 'sanctioned' risk signal (OFAC SDN, EU, UN, UK lists) for the entity AND its resolved cluster siblings — each with the list, regime, source list and a source URL. Tells you whether an entity, or anything cross-source-resolved to the same real-world party, is on a public sanctions list. Get the id from search_entities or lookup_by_identifier.",
+      "Return an entity's sanctions exposure: every 'sanctioned' risk signal (OFAC SDN, EU, UN, UK lists) for the entity AND its resolved cluster siblings — each with the list, regime, source list and a source URL. Response splits the top-level flag: `sanctioned_self` = a direct listing ON this entity; `sanctioned_via_cluster` = the flag reaches it ONLY via a cross-source cluster sibling (~2.3% false-positive tail on UK OpenOwnership resolution — treat cluster-only hits as a lead until you verify the sibling really is the same real-world party). The aggregate `sanctioned` (self OR cluster) is preserved for back-compat. Get the id from search_entities or lookup_by_identifier.",
     inputSchema: {
       type: "object",
       properties: {
@@ -320,7 +324,7 @@ const TOOLS = [
   {
     name: "check_offshore_exposure",
     description:
-      "Walk the ownership chain upward from an entity and flag, hop by hop, whether each node is sanctioned and/or sits in a secrecy jurisdiction (classic tax-haven / offshore-secrecy country). Returns the chain, a boolean `exposed`, and the flagged hops — the offshore-layering lead behind 'does this entity sit on a sanctioned or secrecy-jurisdiction ownership chain?'. Get the id from search_entities or lookup_by_identifier.",
+      "Walk the ownership chain upward from an entity and flag, hop by hop, whether each node is sanctioned and/or sits in a secrecy jurisdiction (classic tax-haven / offshore-secrecy country). Returns the chain, the flagged hops, and a structured 4-state `verdict` — BRANCH ON `verdict`, NOT on `exposed`. States: `no_ownership_data` (we hold zero ownership edges from this entity — NOT a clean verdict, exposure cannot be evaluated), `flagged` (a sanctioned or secrecy-jurisdiction hit sits on the walked chain), `checked_to_max_depth_truncated` (walk reached the depth cap with more chain above — a flagged owner may still sit higher, NOT clean), `checked_full_clean` (walked the full chain, no flag). Also returns `depth_walked` (how deep the walk actually reached) and `depth_capped` (true when the plan or `max_depth` shortened the walk — anonymous keys always walk at most 2 hops). Legacy `exposed` boolean is retained but is only meaningful when `verdict='flagged'`. Get the id from search_entities or lookup_by_identifier.",
     inputSchema: {
       type: "object",
       properties: {
@@ -453,7 +457,7 @@ const TOOLS = [
   {
     name: "semantic_search",
     description:
-      "Meaning-based entity search over the corpus (BGE-M3 vector ANN over the resolved dossier cards). Finds companies and people whose profile is semantically closest to a natural-language query — a description, a role, a risk pattern — even when no keyword matches. Complements search_entities (lexical/name). Optional kind (Company/Person/Asset) and jurisdiction (ISO code) filters. Returns entity_id, caption, kind, jurisdiction, risk and a similarity score; feed entity_id into get_dossier / trace_ownership_path. (Coverage grows as the embedding backfill runs; results may be sparse until then.)",
+      "Meaning-based entity search over the corpus (BGE-M3 vector ANN over the resolved dossier cards). Finds companies and people whose profile is semantically closest to a natural-language query — a description, a role, a risk pattern — even when no keyword matches. Optional kind (Company/Person/Asset) and jurisdiction (ISO code) filters. Returns entity_id, caption, kind, jurisdiction, risk and a similarity score; feed entity_id into get_dossier / trace_ownership_path. PARTIAL COVERAGE — only a small share of the corpus is currently embedded (the backfill is running); a thin or empty result is not proof the corpus is empty, so ALWAYS pair this with search_entities as a lexical fallback before concluding an entity is unknown.",
     inputSchema: {
       type: "object",
       properties: {
@@ -469,7 +473,7 @@ const TOOLS = [
   {
     name: "find_similar",
     description:
-      "Entities most similar to a given one — the nearest corpus dossier cards ('more like this'), for peer discovery and clustering around a known entity. Pass an entity_id from search_entities. Returns entity_id, caption, kind, jurisdiction, risk and a similarity score. (Coverage grows as the embedding backfill runs.)",
+      "Entities most similar to a given one — the nearest corpus dossier cards ('more like this'), for peer discovery and clustering around a known entity. Pass an entity_id from search_entities. Returns entity_id, caption, kind, jurisdiction, risk and a similarity score. TEMPORARILY UNAVAILABLE — the ANN index was dropped while the embedding backfill runs, so this currently returns 503 for every entity; use semantic_search or search_entities in the meantime.",
     inputSchema: {
       type: "object",
       properties: {

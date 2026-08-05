@@ -40,7 +40,7 @@ npx -y @whiteintel/mcp-server
 | `find_similar` | "More like this" — nearest entities to a known id, for peer discovery and clustering | 🔍 Discovery |
 | `search_companies` | Free-text company-name search → registration number | 🔍 Discovery |
 | `lookup_company` | UK company by Companies House number → record + ownership graph | 📋 Lookup |
-| `lookup_by_identifier` | Resolve by strong id — LEI, OFAC/EU/UN/UK sanctions id, UEN, NIP, SEC CIK, KRS, GB-COH | 📋 Lookup |
+| `lookup_by_identifier` | Resolve by strong id — LEI, OFAC/EU/UN/UK sanctions id, UEN, SEC CIK, KRS, GB-COH, SIREN, Brazil RFB CNPJ | 📋 Lookup |
 | `get_entity` | Full record for one entity + its direct relationships | 📋 Lookup |
 | `resolve` | Batch-resolve names or `scheme:value` ids → canonical entity ids + confidence | 📋 Lookup |
 | `get_dossier` | Structured, fully-cited dossier: identity, ownership/UBO chain, risk, provenance | 📊 Intelligence |
