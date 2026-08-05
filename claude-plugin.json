@@ -2,7 +2,7 @@
   "name": "whiteintel",
   "displayName": "WhiteIntel — Ownership Intelligence",
   "version": "0.7.0",
-  "description": "Trace who ultimately owns and controls any company. ~100.6M entities from offshore leaks and 29 global registries, sanctions/PEP screening (OFAC/EU/UN/UK), UBO chain tracing, cited dossiers — and agents can buy paid depth in-flow (Stripe checkout → token). Free anonymous tier.",
+  "description": "Trace who ultimately owns and controls any company. ~102.3M entities from offshore leaks and 29 global registries, sanctions/PEP screening (OFAC/EU/UN/UK), UBO chain tracing, cited dossiers — and agents can buy paid depth in-flow (Stripe checkout → token). Free anonymous tier.",
   "homepage": "https://whiteintel.dev",
   "categories": ["research", "due-diligence", "osint", "finance"],
   "keywords": [
