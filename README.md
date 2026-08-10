@@ -15,7 +15,7 @@ The corporate-ownership & sanctions intelligence layer for AI agents — built f
 [![License: MIT](https://img.shields.io/badge/License-MIT-2f7d4f.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-7c3aed.svg)](https://modelcontextprotocol.io)
 [![Tools](https://img.shields.io/badge/tools-18%20live-00ff7f)](https://whiteintel.dev/developers)
-[![Corpus](https://img.shields.io/badge/corpus-102.3M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
+[![Corpus](https://img.shields.io/badge/corpus-114.8M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
 [![Sources](https://img.shields.io/badge/sources-29%20fused-2f7d4f)](https://whiteintel.dev/sources)
 [![whiteintel.dev](https://img.shields.io/badge/site-whiteintel.dev-5af082)](https://whiteintel.dev)
 
@@ -113,7 +113,7 @@ Check **`get_pricing`** first — it returns the full price list plus this flow 
 
 ## The corpus
 
-**102.3M+ entities across 29 fused registries** — every claim cited, every edge traced:
+**114.8M+ entities across 29 fused registries** — every claim cited, every edge traced:
 
 | Source | What | Coverage |
 |---|---|---|
@@ -146,7 +146,7 @@ Existing corporate-ownership tools were built for compliance analysts clicking w
 
 ## Data & honesty
 
-- **Live corpus:** ~102.3M entities across 29 fused registries. Live counts: [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats).
+- **Live corpus:** ~114.8M entities across 29 fused registries. Live counts: [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats).
 - An absent edge means "not yet observed", not "does not exist".
 - Investigative **decision-support**, not a legal determination of beneficial ownership.
 - Semantic search coverage grows as the embedding backfill completes — lexical search always covers the full corpus.

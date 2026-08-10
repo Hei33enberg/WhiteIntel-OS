@@ -7,7 +7,7 @@
  * search the corpus of companies and people, and trace ownership chains to the
  * ultimate beneficial owner.
  *
- * Data: ~102.3M entities fused across 29 public/semi-public registries — OpenOwnership,
+ * Data: ~114.8M entities fused across 29 public/semi-public registries — OpenOwnership,
  * GLEIF, ICIJ Offshore Leaks, SEC EDGAR, sanctions/PEP lists and more — cross-source
  * resolved onto one cited identity spine, plus live UK Companies House lookups.
  *
@@ -406,7 +406,7 @@ const TOOLS = [
         tier: { type: "string", enum: ["standard", "premium"], description: "Dossier tier: standard (€39) or premium (€99, adds itemised assets)." },
         pack: { type: "string", enum: ["single", "5", "25"], description: "Optional bulk pack (default single). standard: 5=€159 / 25=€599 · premium: 5=€399 (no 25-pack)." },
         entity_id: { type: "string", maxLength: 80, description: "Optional entity id (from search_entities) the dossier should unlock." },
-        entity_name: { type: "string", maxLength: 200, description: "Optional entity display name (shown in Checkout and the delivery email)." },
+        entity_name: { type: "string", maxLength: 200, description: "Optional entity display name, recorded on the Stripe session as an audit trace only — it is NOT displayed anywhere. Since 2026-08-09 the name shown on the invoice and in the delivery email is read from WhiteIntel's own record for entity_id (caller-supplied text is never rendered in mail we send), and the Checkout page shows the Stripe product name. Safe to omit." },
       },
       required: ["tier"],
     },
@@ -473,7 +473,13 @@ const TOOLS = [
   {
     name: "find_similar",
     description:
-      "Entities most similar to a given one — the nearest corpus dossier cards ('more like this'), for peer discovery and clustering around a known entity. Pass an entity_id from search_entities. Returns entity_id, caption, kind, jurisdiction, risk and a similarity score. TEMPORARILY UNAVAILABLE — the ANN index was dropped while the embedding backfill runs, so this currently returns 503 for every entity; use semantic_search or search_entities in the meantime.",
+      // The "TEMPORARILY UNAVAILABLE … returns 503 for every entity" sentence that used to sit here
+      // was true when the ANN index was dropped, and false by the time anyone read it: the index was
+      // rebuilt as IVFFlat and measured healthy (valid, 7.7 GB over 985,708 chunks, 2026-08-10). It
+      // shipped on npm for weeks telling every installing agent not to bother calling this tool.
+      // The real limit is coverage, not availability, and it is stated the same way here as on the
+      // hosted /api/mcp so the two agent surfaces cannot disagree about what works.
+      "Entities most similar to a given one — the nearest corpus dossier cards ('more like this'), for peer discovery and clustering around a known entity. Pass an entity_id from search_entities. Returns entity_id, caption, kind, jurisdiction, risk and a similarity score. COVERAGE IS PARTIAL — only entities in the embedded risk-scored subset (~1.9% of the corpus and growing) have peers; an entity outside it returns an empty list, not an error. Fall back to semantic_search or search_entities for the rest.",
     inputSchema: {
       type: "object",
       properties: {
