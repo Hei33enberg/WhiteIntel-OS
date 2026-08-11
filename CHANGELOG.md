@@ -1,5 +1,164 @@
 # Changelog
 
+## 0.7.4 — 2026-08-11 — the tool a human can actually finish (20 → 21), and nine descriptions that were overstating
+
+Two things shipped here. One is a missing tool. The other is the harder half: this package has
+twice shipped a description that lied to an installing agent — a `find_similar` blurb saying a
+working tool was broken, and an identifier scheme that resolved to zero rows — so every one of the
+now-21 descriptions was re-read against a live production response before this version was cut.
+Nine of them were wrong. Every number below came out of a command whose output is in the session
+log; nothing here was inferred from a route file.
+
+### The gap: `get_payment_link` existed on the hosted surface and not in the package
+
+Measured first, both surfaces, same minute:
+
+```
+POST https://whiteintel.dev/api/mcp  {"method":"tools/list"}   -> 21 tools
+npx -y github:Hei33enberg/WhiteIntel-OS  (initialize+tools/list) -> 20 tools,
+                                            serverInfo.version 0.7.3
+diff = exactly one name: get_payment_link
+```
+
+Then the endpoint it needs, because you do not advertise a tool pointing at something you have not
+called:
+
+```
+GET https://whiteintel.dev/api/public/paylinks
+  -> HTTP 200, Cache-Control: public, max-age=3600
+  -> { links: [standard:25, standard:5, standard:single], how_to_use: [4 strings] }
+```
+
+It answers, so the tool ships. Note what that body does **not** contain: any premium link. The
+hosted description implies the links cover "the one-off dossiers"; measured, they cover Standard
+only. This package says so, and says Premium still needs `buy_dossier`.
+
+Why this is not a parity nit. 100% of the 205,497 purchase offers this company has ever served went
+to machine callers with no card. `buy_dossier` hands back a Checkout Session that is single-use and
+dead in 24 hours — worthless in a report a human opens tomorrow. `get_payment_link` returns a URL
+that still works next week. That is the difference between an offer and a sale, and for four
+releases it was reachable over HTTP and missing from the package every local client installs.
+
+`get_pricing` gained the hosted surface's step 0 (no human at the keyboard → use
+`get_payment_link`), and its `api.metered` line was aligned with the hosted payload, which the two
+surfaces disagreed about: this one billed search as metered, the hosted one calls search, entity
+lookup and MCP free.
+
+### `max_depth` is a request, not a promise — and four descriptions were selling it as a promise
+
+The worst finding. Anonymously, against production, 2026-08-11:
+
+```
+/api/public/ownership-path?root=<barclays>&max_depth=6   -> max_depth: 2, depth_capped: true, plan: free
+/api/public/graph/path?...&max_depth=4                   -> max_depth: 2, depth_capped: true, plan: free
+/api/public/graph/neighbourhood?...&depth=3              -> depth: 2,     depth_capped: true, plan: free
+/api/public/offshore-exposure/<barclays>?max_depth=6     -> depth_walked: 1, depth_capped: true,
+                                                            verdict: checked_full_clean
+```
+
+The free plan caps every walk at two hops. Nothing in the old descriptions said so; they documented
+the argument's range (up to 10 hops on `trace_ownership_path`) as if the caller got what it asked
+for. An agent that asks for six hops to the UBO, receives two, and reads no further will write the
+name of an intermediate holding company into a due-diligence report as the beneficial owner. All
+four descriptions now tell the caller to read the RETURNED `depth` / `max_depth` / `depth_walked`
+and `depth_capped`, and to scope its sentences to that number.
+
+`check_offshore_exposure` needed a second correction on top. The old text mapped
+`checked_full_clean` to "walked the full chain" and `depth_capped` to "the plan shortened the walk".
+Measured, the two co-occur: the walk above ended at one hop — genuinely out of chain, below the
+two-hop ceiling — and still reported `depth_capped: true`. So `depth_capped` means *a cap was in
+force*, not *the cap bit*, and `checked_full_clean` is not a licence to write "no offshore
+exposure" without quoting `depth_walked`.
+
+### `graph_neighbourhood` returns every edge twice at depth ≥ 2, and the payload does not say so
+
+Four roots, `depth=2`, raw edges vs distinct on `from|to|predicate`:
+
+```
+BARCLAYS PLC        59 raw / 33 distinct
+BARCLAYS BANK PLC  133 raw / 91 distinct
+Barclays Bank Uk    48 raw / 35 distinct
+GAZPROM (U.K.)       4 raw /  2 distinct
+depth=1 on the same roots: 25/25, 26/26, 7/7 — clean
+```
+
+`edge_count` counts the duplicated list, and the duplicates are charged against the `edges` budget,
+so a call can report `truncated: true` while holding far fewer distinct edges than the budget you
+set. A database fix is in flight and is deliberately **not** described here — the description states
+today's behaviour and tells the caller to de-duplicate before counting relationships. What the old
+description got right is confirmed: with `edges=10` the response did come back `truncated: true`
+with a plain-language `truncation_note`.
+
+One claim we could **not** reproduce, and therefore do not repeat: a reported silent downgrade of
+depth 2 to depth 1 with `depth_capped: false`. Six consecutive `depth=2` calls on the densest root
+returned `depth: 2` with edges at depth 2 present every time. It may be load-dependent. The
+instruction to read the returned `depth` stands on its own without it.
+
+### The rest, each measured
+
+- **`get_pulse`** named the wrong registry. Its `ownership` stream was documented as GLEIF;
+  the newest 100 rows were **100% `borme`** — Spain's Boletín Oficial del Registro Mercantil. And
+  the old text insisted the default feed "is NOT ownership-only": the newest 100 rows of the
+  unfiltered feed were **100% `ownership`**, because the feed is ordered by ingest recency and
+  whichever loader ran last fills its head. Citation coverage, the one thing that description got
+  right, held everywhere: 100/100 rows carried a `source_url` on all four kinds.
+- **`get_sanctions`** is not sanctions-only despite the name. BARCLAYS BANK PLC returned
+  `sanctioned: false` **with** a HIGH-severity `signal_type: 'crime'` row (a criminal/wanted
+  listing from `opensanctions_crime`, reaching it via its cluster) — and `list` and `regime` were
+  null on it, so a null `list` is not missing data. A `sanctioned: false` response can carry an
+  adverse finding you are obliged to report.
+- **`semantic_search` / `find_similar`** were sold as general meaning-based corpus search. The
+  endpoint's own `coverage` object: **990,055 embedded of a 47,486,969 universe (2.1%), ~99.6%
+  risk-listed, ~97% natural persons.** In practice it is a risk-list search — "sanctioned russian
+  aluminium holding" returned sanctioned Russian *ships* as its top hits, and `find_similar` on
+  BARCLAYS BANK PLC returns `count: 0`. Both descriptions now say which slice they search, and that
+  empty means "not embedded", never "no peers exist". `semantic_search` also carries its measured
+  6.4 s cold latency.
+- **`get_financials`** called balance-sheet coverage "broad". Sampling 48 UK company entities from
+  `search_entities`: **11 returned any filed period.** The other 37 answered HTTP 200 with an empty
+  `financials` and a `note` — BARCLAYS BANK PLC (CH 01026167) among them. `get_company_details`
+  came out of the same sample at **45 of 48**, so it now carries that number as a contrast.
+- **`resolve`** documented `confidence: 'name'` without saying what it costs you. The query
+  "Tesco" resolved to a **French** company literally named TESCO (`fr-siren:454067281`), while
+  `gb-coh:00445790` resolved 'exact' to TESCO PLC. A 'name' hit is a candidate. Unmatched rows come
+  back `{ match: null, confidence: null }`; the 25-item anonymous limit was verified by a 26th item
+  returning HTTP 400.
+- **`lookup_by_identifier`** — all eleven schemes were exercised against production and every one
+  resolved a real entity, `lei` and `uen` included (both needed values pulled from the corpus
+  first; a format-valid LEI that we simply do not hold 404s, which is how the earlier `nip` ghost
+  hid). The description now separates the two failure modes an agent will otherwise conflate:
+  unsupported scheme → **400** with the accepted set in `detail`; supported scheme, unheld value →
+  **404**. `cy-reg` → 400 verified; `cusip:` appears on US rows and is likewise not accepted.
+- **`search_entities`** pointed at `get_entity (registry_profile)` for provenance. It is populated
+  on **22 of 32** sampled entities, so the description now names the fallbacks
+  (`linked_records[].registry`, `connections[].source`). Its "full corpus" claim held: one name
+  search returned FR, BR and US rows across `siren`, `lei`, `br-cnpj` and `cusip`.
+- **`trace_ownership_path`** promised "the ordered chain(s)". It returns one flat `hops` array.
+
+Corpus figures re-read from `/api/public/stats` and left alone because they were right: 29
+registries, 116,163,032 entities, 21,452,620 relationships.
+
+### Guardrails
+
+`test/smoke.mjs` asserted `tools.length >= 9`. A floor is how this package shipped 0.7.0 with two
+tools missing and nothing failing. It now asserts the **exact** 21 names — so a rename surfaces as
+a named diff rather than an unchanged count — that every tool carries a description and an
+inputSchema, and that `serverInfo.version` equals `package.json`, the drift that produced 0.7.0
+vs 0.7.1 and a hosted surface reporting 0.7.0 while the package was 0.7.3.
+
+```
+$ npm run smoke
+whiteintel-mcp-server running on stdio · 21 tools · API https://whiteintel.dev · anonymous (free tier)
+OK: serverInfo.version 0.7.4 matches package.json
+OK: tools/list returned 21 tools, all named and described
+$ npm test
+# pass 4  # fail 0
+```
+
+Version bumped in all five places that can disagree: `package.json`, `package-lock.json`,
+`server.json` (twice), `claude-plugin.json`, and the `Server()` constructor in `index.js` that the
+client actually reads over the wire.
+
 ## 0.7.3 — 2026-08-11 — bounded graph walk (2 new tools, 18 → 20)
 
 The app-side API and the DB functions landed first (WhiteIntel migration 0295, LINEAR-4806);

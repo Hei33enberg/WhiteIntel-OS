@@ -31,7 +31,7 @@ The corporate-ownership & sanctions intelligence layer for AI agents — built f
 npx -y @whiteintel/mcp-server
 ```
 
-…starts an MCP server with **20 tools** that give any AI agent — Claude Desktop, Cursor, Cline, Windsurf, or your own runtime — **full corporate-ownership intelligence**: search by name or meaning, trace ownership chains to the UBO, screen sanctions across OFAC/EU/UN/UK, detect offshore layering, pull fully cited dossiers with financials and asset layers, and even purchase deeper intelligence through agent-initiated Stripe checkout. Every claim cited to its source, every edge traced to a registry record.
+…starts an MCP server with **21 tools** that give any AI agent — Claude Desktop, Cursor, Cline, Windsurf, or your own runtime — **full corporate-ownership intelligence**: search by name or meaning, trace ownership chains to the UBO, screen sanctions across OFAC/EU/UN/UK, detect offshore layering, pull fully cited dossiers with financials and asset layers, and even purchase deeper intelligence through agent-initiated Stripe checkout. Every claim cited to its source, every edge traced to a registry record.
 
 | Tool | What it does | Category |
 |---|---|---|
@@ -54,9 +54,10 @@ npx -y @whiteintel/mcp-server
 | `get_pulse` | Live corpus activity feed — recent ownership/control changes, sourced | 📊 Intelligence |
 | `get_pricing` | Full price list + machine-readable purchase flow (static, no network call) | 💳 Commerce |
 | `buy_dossier` | Start a one-off dossier purchase via guest Stripe Checkout → `checkout_url` | 💳 Commerce |
+| `get_payment_link` | Permanent, reusable Stripe payment links — the artefact you hand to a human | 💳 Commerce |
 | `claim_dossier` | Redeem a paid session for a 90-day access token (idempotent) | 💳 Commerce |
 
-**20 callable tools** — 4 Discovery + 4 Lookup + 4 Intelligence + 2 Graph + 2 Risk + 2 Commerce + 1 Feed + 1 Pricing. All read-only except `buy_dossier` (opens Stripe — money moves only when a human completes it) and `claim_dossier` (redeems an already-paid session). Ids flow between tools: search → get_dossier → trace_ownership_path → get_sanctions.
+**21 callable tools** — 4 Discovery + 4 Lookup + 4 Intelligence + 2 Graph + 2 Risk + 3 Commerce + 1 Feed + 1 Pricing. All read-only except `buy_dossier` (opens Stripe — money moves only when a human completes it) and `claim_dossier` (redeems an already-paid session). Ids flow between tools: search → get_dossier → trace_ownership_path → get_sanctions.
 
 ## Quickstart (60 seconds)
 
@@ -111,6 +112,8 @@ An agent can buy the paid depth of a dossier end-to-end, **no WhiteIntel account
 3. **`claim_dossier`** `{ session_id }` → `{ token, entity_id, tier }`. Idempotent; returns `402` until paid.
 4. **`get_dossier`** `{ id, token }` → the unlocked, fully-cited dossier JSON. Tokens valid 90 days.
 
+**No human at the keyboard right now?** Step 1 is the wrong tool: a `checkout_url` is single-use and expires in 24 hours, so it is dead by the time someone reads your report. Call **`get_payment_link`** instead — it returns permanent Stripe links you can paste into a document, a ticket or a message, and append `?client_reference_id=<entity uuid>` to bind one to a specific company. Measured 2026-08-11: those links cover the **Standard** tier only (single / 5 / 25); Premium still goes through `buy_dossier`.
+
 Check **`get_pricing`** first — it returns the full price list plus this flow in machine-readable form.
 
 ## The corpus
@@ -144,7 +147,7 @@ Cypriot records carry a `cy-reg:` identifier. `lookup_by_identifier` does **not*
 
 > Contains information from the Cyprus Department of Registrar of Companies and Intellectual Property, licensed under CC BY 4.0.
 
-**Semantic search** (`semantic_search` / `find_similar`) runs over resolved dossier cards using BGE-M3 embeddings; coverage grows as the embedding backfill completes. Lexical `search_entities` always covers the full corpus.
+**Semantic search** (`semantic_search` / `find_similar`) runs over resolved dossier cards using BGE-M3 embeddings; coverage grows as the embedding backfill completes. Measured 2026-08-11 from the endpoint's own `coverage` payload: **990,055 of a 47,486,969 universe embedded (2.1%), and that slice is ~99.6% risk-listed and ~97% natural persons** — so today these two tools behave much more like a sanctions/PEP search than a corpus search, and an empty result usually means "not embedded yet". Lexical `search_entities` always covers the full corpus; pair it with either of them before drawing a conclusion.
 
 ## Why WhiteIntel
 
@@ -193,7 +196,7 @@ WhiteIntel is built and directed by [@Hei33enberg](https://github.com/Hei33enber
 ## Get on the graph
 
 ```bash
-npx -y @whiteintel/mcp-server     # 20 tools, any MCP agent
+npx -y @whiteintel/mcp-server     # 21 tools, any MCP agent
 ```
 
 - **Install** — drop the server into Claude Desktop, Cursor, Cline, Windsurf, or your own runtime (see [Quickstart](#quickstart-60-seconds)).

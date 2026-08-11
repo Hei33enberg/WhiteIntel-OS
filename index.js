@@ -21,7 +21,9 @@
  * Agents can pay: get_pricing → buy_dossier (guest Stripe Checkout, no account) →
  * claim_dossier (mints a 90-day entity-scoped token) → get_dossier with `token`
  * unlocks the paid depth (full UBO chain + financial history; premium adds
- * itemised assets). Stdio transport.
+ * itemised assets). When there is NO human at the keyboard, get_payment_link
+ * returns permanent Stripe links that can be handed over asynchronously — a
+ * buy_dossier session is single-use and expires in 24h. Stdio transport.
  * Add to an MCP client (Claude Desktop, Cursor) with:
  *   { "command": "npx", "args": ["-y", "@whiteintel/mcp-server"],
  *     "env": { "WHITEINTEL_API_KEY": "wi_…" } }   // env optional (free tier without it)
@@ -193,9 +195,13 @@ const PRICING = {
       "Subscriptions are bought at whiteintel.dev/pricing (account required); the wi_ API key from Settings then lifts this MCP server's limits via WHITEINTEL_API_KEY.",
   },
   api: {
-    metered: "Pay-as-you-go API from €0.20/call, tapering to €0.12 and €0.08/call at volume.",
+    // Aligned 2026-08-11 with the hosted /api/mcp get_pricing payload (measured — the two
+    // surfaces disagreed: this one billed search as metered, the hosted one calls it free).
+    metered:
+      "Search, entity lookup and MCP are FREE and unlimited (the open language). DEPTH calls are pay-as-you-go from €0.20/call, tapering to €0.12 and €0.08/call at volume.",
   },
   how_an_agent_buys: [
+    "0. NO HUMAN AT THE KEYBOARD RIGHT NOW? Call get_payment_link instead of buy_dossier. It returns permanent, reusable Stripe links you can put in a report or a message — append ?client_reference_id=<entity uuid> to bind one to a company. A buy_dossier URL is single-use and expires in 24h, so it is the wrong artefact to hand over asynchronously. Measured 2026-08-11: payment links exist for the STANDARD tier only (single / 5 / 25); Premium still needs buy_dossier.",
     "1. Call buy_dossier { tier, pack?, entity_id?, entity_name? } → returns a Stripe checkout_url.",
     "2. Open the checkout_url so a human (or a payment-capable agent) completes payment — no WhiteIntel account needed; Stripe collects an email for delivery.",
     "3. After payment Stripe redirects to whiteintel.dev with ?session_id=cs_… — call claim_dossier { session_id } to mint the access token (idempotent, safe to retry).",
@@ -234,7 +240,7 @@ const TOOLS = [
   {
     name: "search_entities",
     description:
-      "Search every node in the live WhiteIntel corpus — companies AND people — by name, across all fused sources. This is the lexical search and it always covers the FULL corpus, so it is the fallback whenever semantic_search comes back thin. Returns entity ids you then pass to get_entity or trace_ownership_path. Each hit's `source` says whether it came from the resolved corpus or a live registry passthrough — it does NOT name the originating registry; for that provenance call get_entity (registry_profile) or get_dossier, which cite per-record source URLs. Use `juris` to scope to a country (e.g. gb, ky, us, cy).",
+      "Search every node in the live WhiteIntel corpus — companies AND people — by name, across all fused sources. This is the lexical search and it always covers the FULL corpus, so it is the fallback whenever semantic_search comes back thin. Returns entity ids you then pass to get_entity or trace_ownership_path. Each hit's `source` says whether it came from the resolved corpus or a live registry passthrough — it does NOT name the originating registry. For that provenance call get_entity, whose `entity.registry_profile` names the source register when we hold one — measured 2026-08-11 it was populated on 22 of 32 sampled entities, so expect null sometimes and fall back to `linked_records[].registry` and `connections[].source` — or get_dossier, which cites per-record source URLs. Use `juris` to scope to a country (e.g. gb, ky, us, cy). Reach into the non-UK sources is verified, not assumed: a name search for 'PETROLEO BRASILEIRO' returned FR (siren), BR (lei and br-cnpj) and US (cusip) rows in one response, 2026-08-11.",
     inputSchema: {
       type: "object",
       properties: {
@@ -278,12 +284,14 @@ const TOOLS = [
   {
     name: "trace_ownership_path",
     description:
-      "Walk the ownership graph upward from a root entity, up to max_depth hops, and return the ordered chain(s) connecting it to the ultimate beneficial owner. Use this to answer 'who ultimately controls X?'. Get the root id from search_entities.",
+      "Walk the ownership graph upward from a root entity and return the ordered hops connecting it to the ultimate beneficial owner. Use this to answer 'who ultimately controls X?'. Get the root id from search_entities. " +
+      "THE HOP AT THE TOP OF THE LIST IS NOT NECESSARILY THE ULTIMATE OWNER, AND max_depth IS A REQUEST, NOT A PROMISE. Measured 2026-08-11 anonymously: max_depth=6 came back as `max_depth: 2, depth_capped: true, plan: 'free'` — the walk stopped two hops up and the payload said so only in those two fields. So before you name a UBO, compare `hop_count` with the RETURNED `max_depth` and check `depth_capped`: if the walk was capped and the topmost owner still has owners, you have found an intermediate holder, not the beneficial owner. A paid API key walks deeper. " +
+      "Shape: a single flat `hops` array (each hop from/fromName/to/toName/role/share/source), not one array per branch. `as_observed` is a standing caveat: edges carry the date we OBSERVED them in a registry, not a validity period — we hold no ownership end dates, so a link shown here may already have ended.",
     inputSchema: {
       type: "object",
       properties: {
         root: { type: "string", maxLength: 80, description: "Root entity id to trace from." },
-        max_depth: { type: "number", minimum: 1, maximum: 10, description: "Max hops to walk (default 6)." },
+        max_depth: { type: "number", minimum: 1, maximum: 10, description: "Max hops to request (default 6). The plan lowers it — anonymous callers measured at 2 — so trust the response's `max_depth` / `depth_capped`, not this value." },
       },
       required: ["root"],
     },
@@ -300,12 +308,15 @@ const TOOLS = [
   {
     name: "graph_neighbourhood",
     description:
-      "Return every ownership/control edge within a bounded number of hops of one entity, in BOTH directions: who it controls, who controls it, and their neighbours. Use it to answer 'what sits around this company?' — the wider view that trace_ownership_path (upward only) does not give. Hard-capped in the database: depth 3, 300 edges, and at most 25 edges followed per entity per direction per hop. If the edge budget is exhausted the response sets `truncated: true` with a plain-language note; that is NORMAL for hub entities (the corpus holds single nodes with more than 22,000 edges) and means the picture is partial, not wrong. Each edge carries `origin`: 'registry' (observed in a source registry) or 'derived'/'curated'/'asserted' (inferred by WhiteIntel). Get the root id from search_entities or resolve.",
+      "Return every ownership/control edge within a bounded number of hops of one entity, in BOTH directions: who it controls, who controls it, and their neighbours. Use it to answer 'what sits around this company?' — the wider view that trace_ownership_path (upward only) does not give. Hard-capped in the database: depth 3, 300 edges, and at most 25 edges followed per entity per direction per hop. " +
+      "READ `depth` IN THE RESPONSE — DO NOT ASSUME YOU GOT THE DEPTH YOU ASKED FOR. The walk can come back shallower than requested and `truncated` does NOT signal that; the depth signals are `depth` (how deep it actually went) and `depth_capped`. Measured 2026-08-11 on an anonymous caller: depth=3 requested returned depth=2 with depth_capped=true, because the free plan caps every walk at 2 hops. Any sentence you write about what is or is not around this entity must be scoped to the RETURNED depth. " +
+      "TWO MORE THINGS THE PAYLOAD DOES NOT SAY ABOUT ITSELF, both measured 2026-08-11: (1) at depth 2 or more the edge list REPEATS edges — the same from/to/predicate came back twice on every root tested (raw vs distinct: 59/33, 133/91, 48/35), so de-duplicate before counting relationships or drawing a graph; (2) `edge_count` counts that raw, duplicated list and the duplicates are charged against your `edges` budget, so a run can report `truncated: true` while holding far fewer distinct edges than the budget you set. A fix to the database function is in flight and is NOT reflected here — this describes what the endpoint returns today. " +
+      "`truncated: true` plus a plain-language `truncation_note` does work and does mean the edge budget ran out (verified with edges=10); that is NORMAL for hub entities (the corpus holds single nodes with more than 22,000 edges) and means the picture is partial, not wrong. Each edge carries `origin`: 'registry' (observed in a source registry) or 'derived'/'curated'/'asserted' (inferred by WhiteIntel). Get the root id from search_entities or resolve.",
     inputSchema: {
       type: "object",
       properties: {
         root: { type: "string", maxLength: 80, description: "Root entity uuid." },
-        depth: { type: "number", minimum: 1, maximum: 3, description: "Hops to walk (default 2). Also capped by your plan." },
+        depth: { type: "number", minimum: 1, maximum: 3, description: "Hops to walk (default 2). A REQUEST, not a guarantee — the plan caps it (anonymous callers measured at 2 hops) and the response's `depth` is the authority." },
         edges: { type: "number", minimum: 10, maximum: 300, description: "Edge budget (default 120). Lower it for a legible picture, raise it for completeness." },
       },
       required: ["root"],
@@ -315,13 +326,14 @@ const TOOLS = [
   {
     name: "graph_path",
     description:
-      "Find how two entities are connected: a bounded breadth-first search over ownership and control edges in both directions, returning the ordered hops from one to the other. WARNING, AND IT CHANGES HOW YOU MUST REPORT THE RESULT: this search is BOUNDED, NOT EXHAUSTIVE. At most 15 edges are followed per entity, per direction, per hop, so a genuine connection running through a heavily-connected intermediary can be missed. `found: false` means NO PATH WAS FOUND WITHIN THOSE BOUNDS — it is NOT evidence that the two entities are unconnected, and must never be reported as a clean result. The response always carries `exhaustive: false` and a `bounds_note` restating this.",
+      "Find how two entities are connected: a bounded breadth-first search over ownership and control edges in both directions, returning the ordered hops from one to the other. WARNING, AND IT CHANGES HOW YOU MUST REPORT THE RESULT: this search is BOUNDED, NOT EXHAUSTIVE. At most 15 edges are followed per entity, per direction, per hop, so a genuine connection running through a heavily-connected intermediary can be missed. `found: false` means NO PATH WAS FOUND WITHIN THOSE BOUNDS — it is NOT evidence that the two entities are unconnected, and must never be reported as a clean result. The response always carries `exhaustive: false`, a structured `verdict` (e.g. 'connected_within_bounds') and a `bounds_note` restating this. " +
+      "AND THE DEPTH YOU GET IS NOT THE DEPTH YOU ASK FOR: the response echoes its own `max_depth` plus `depth_capped`, and those are the authority. Measured 2026-08-11 anonymously — max_depth=3 and max_depth=4 both came back as `max_depth: 2, depth_capped: true, plan: 'free'`. So a free-tier `found: false` is a two-hop negative however many hops you requested; say two hops, not four.",
     inputSchema: {
       type: "object",
       properties: {
         from: { type: "string", maxLength: 80, description: "Start entity uuid." },
         to: { type: "string", maxLength: 80, description: "End entity uuid." },
-        max_depth: { type: "number", minimum: 1, maximum: 4, description: "Max hops (default 3). Depth 4 is measurably slower on densely connected entities — request it deliberately." },
+        max_depth: { type: "number", minimum: 1, maximum: 4, description: "Max hops to request (default 3). Reduced by the plan — anonymous callers measured at 2 — so read the response's `max_depth` and `depth_capped`. Depth 4 is measurably slower on densely connected entities; request it deliberately." },
       },
       required: ["from", "to"],
     },
@@ -330,7 +342,9 @@ const TOOLS = [
   {
     name: "lookup_by_identifier",
     description:
-      "Resolve an entity by a strong external identifier instead of a name — a LEI, OFAC SDN uid, EU/UN/UK sanctions id, Singapore UEN, SEC CIK, Polish KRS, UK Companies House number, French SIREN, or Brazil RFB CNPJ. Returns the single resolved entity (id, type, jurisdiction, identifier, risk) so you can pivot into get_entity / get_dossier / get_sanctions. Use this when you already hold a registry id and want the corpus node behind it. NOT every identifier you may see in a response is resolvable here — the enum below is the complete accepted set and the route hard-rejects anything else with a 400. In particular Cyprus records carry a `cy-reg:` identifier that this tool does NOT accept: reach Cypriot companies with search_entities using juris='cy'.",
+      "Resolve an entity by a strong external identifier instead of a name — a LEI, OFAC SDN uid, EU/UN/UK sanctions id, Singapore UEN, SEC CIK, Polish KRS, UK Companies House number, French SIREN, or Brazil RFB CNPJ. Returns the single resolved entity (id, type, jurisdiction, identifier, risk) so you can pivot into get_entity / get_dossier / get_sanctions. Use this when you already hold a registry id and want the corpus node behind it. All eleven schemes were exercised against production on 2026-08-11 and every one resolved a real entity — no scheme in this enum is decorative. " +
+      "DISTINGUISH THE TWO FAILURE MODES: an unsupported scheme returns HTTP 400 with `error: 'bad_request'` and the accepted set spelled out in `detail`, whereas a supported scheme whose value we simply do not hold returns HTTP 404 `error: 'not_found'`. A 404 is a statement about the corpus, not about the tool — fall back to search_entities. " +
+      "NOT every identifier you may see in a response is resolvable here — the enum below is the complete accepted set and the route hard-rejects anything else with a 400. In particular Cyprus records carry a `cy-reg:` identifier that this tool does NOT accept (verified: `cy-reg` → 400), and neither is the `cusip:` seen on US securities rows: reach Cypriot companies with search_entities using juris='cy'.",
     // LINEAR-5147: `nip` removed — no Polish NIP is stamped onto entities.identifier today
     // (they live only in props->>'nip' on `krs:` rows), so the scheme resolved to nothing.
     // Keep this enum aligned with app IDENTIFIER_SCHEMES; the server-side by-identifier
@@ -352,7 +366,9 @@ const TOOLS = [
   {
     name: "get_sanctions",
     description:
-      "Return an entity's sanctions exposure: every 'sanctioned' risk signal (OFAC SDN, EU, UN, UK lists) for the entity AND its resolved cluster siblings — each with the list, regime, source list and a source URL. Response splits the top-level flag: `sanctioned_self` = a direct listing ON this entity; `sanctioned_via_cluster` = the flag reaches it ONLY via a cross-source cluster sibling (~2.3% false-positive tail on UK OpenOwnership resolution — treat cluster-only hits as a lead until you verify the sibling really is the same real-world party). The aggregate `sanctioned` (self OR cluster) is preserved for back-compat. Get the id from search_entities or lookup_by_identifier.",
+      "Return an entity's screening exposure for the entity AND its resolved cluster siblings, each with a source URL. " +
+      "IT IS NOT SANCTIONS-ONLY, DESPITE THE NAME — read each row's `signal_type`. Measured 2026-08-11: BARCLAYS BANK PLC came back `sanctioned: false` with one signal of `signal_type: 'crime'` (severity HIGH, source_list `opensanctions_crime`, a criminal/wanted listing reaching it via its cluster). Only `signal_type: 'sanctioned'` rows are sanctions designations, and only those reliably carry `list` and `regime` — on the crime row both were null, so do not read a null `list` as missing data. Two consequences: a `sanctioned: false` response can still contain a HIGH-severity adverse finding you must report, and 'no sanctions signal' (what the top-level flag and `note` describe) is not 'nothing found'. " +
+      "Response splits the top-level flag: `sanctioned_self` = a direct listing ON this entity; `sanctioned_via_cluster` = the flag reaches it ONLY via a cross-source cluster sibling (~2.3% false-positive tail on UK OpenOwnership resolution — treat cluster-only hits as a lead until you verify the sibling really is the same real-world party). The aggregate `sanctioned` (self OR cluster) is preserved for back-compat. Get the id from search_entities or lookup_by_identifier.",
     inputSchema: {
       type: "object",
       properties: {
@@ -365,12 +381,13 @@ const TOOLS = [
   {
     name: "check_offshore_exposure",
     description:
-      "Walk the ownership chain upward from an entity and flag, hop by hop, whether each node is sanctioned and/or sits in a secrecy jurisdiction (classic tax-haven / offshore-secrecy country). Returns the chain, the flagged hops, and a structured 4-state `verdict` — BRANCH ON `verdict`, NOT on `exposed`. States: `no_ownership_data` (we hold zero ownership edges from this entity — NOT a clean verdict, exposure cannot be evaluated), `flagged` (a sanctioned or secrecy-jurisdiction hit sits on the walked chain), `checked_to_max_depth_truncated` (walk reached the depth cap with more chain above — a flagged owner may still sit higher, NOT clean), `checked_full_clean` (walked the full chain, no flag). Also returns `depth_walked` (how deep the walk actually reached) and `depth_capped` (true when the plan or `max_depth` shortened the walk — anonymous keys always walk at most 2 hops). Legacy `exposed` boolean is retained but is only meaningful when `verdict='flagged'`. Get the id from search_entities or lookup_by_identifier.",
+      "Walk the ownership chain upward from an entity and flag, hop by hop, whether each node is sanctioned and/or sits in a secrecy jurisdiction (classic tax-haven / offshore-secrecy country). Returns the chain, the flagged hops, and a structured 4-state `verdict` — BRANCH ON `verdict`, NOT on `exposed`. States: `no_ownership_data` (we hold zero ownership edges from this entity — NOT a clean verdict, exposure cannot be evaluated), `flagged` (a sanctioned or secrecy-jurisdiction hit sits on the walked chain), `checked_to_max_depth_truncated` (walk reached the depth cap with more chain above — a flagged owner may still sit higher, NOT clean), `checked_full_clean` (the walk ran out of chain before the cap, no flag). Also returns `depth_walked` (how deep the walk actually reached) and `depth_capped`. " +
+      "READ `depth_capped` EVEN WHEN THE VERDICT IS `checked_full_clean`, because the two co-occur. Measured 2026-08-11 anonymously with max_depth=6: `verdict: 'checked_full_clean', depth_walked: 1, depth_capped: true, plan: 'free'`. `depth_capped: true` means A CAP WAS IN FORCE, not that the cap necessarily bit — here the chain genuinely ended after one hop, below the free plan's 2-hop ceiling. The honest report of that response is 'clean over the one hop of ownership we hold, on a walk a free key limits to two', which is what the payload's own `note` says in prose. Never promote `checked_full_clean` to 'no offshore exposure' without quoting `depth_walked`. Anonymous callers walk at most 2 hops however high you set max_depth. Legacy `exposed` boolean is retained but is only meaningful when `verdict='flagged'`. Get the id from search_entities or lookup_by_identifier.",
     inputSchema: {
       type: "object",
       properties: {
         id: { type: "string", maxLength: 80, description: "Entity id to assess." },
-        max_depth: { type: "number", minimum: 1, maximum: 6, description: "Max ownership hops to walk (default 6)." },
+        max_depth: { type: "number", minimum: 1, maximum: 6, description: "Max ownership hops to request (default 6). Anonymous callers are capped at 2 — read `depth_walked` in the response." },
       },
       required: ["id"],
     },
@@ -379,7 +396,7 @@ const TOOLS = [
   {
     name: "get_company_details",
     description:
-      "Companies House register detail for a UK company by entity id: registered address, status, company type, incorporation date, SIC industry codes, and the filing/compliance layer — accounts type, last-filed and next-due dates (flagged when OVERDUE), confirmation-statement status, outstanding mortgage charges, and former ('also known as') names. Use this for 'where is X registered / what does it file / is it overdue / what was it called before'. Get the id from search_entities or lookup_by_identifier.",
+      "Companies House register detail for a UK company by entity id: registered address, status, company type, incorporation date, SIC industry codes, and the filing/compliance layer — accounts type, last-filed and next-due dates (flagged when OVERDUE), confirmation-statement status, outstanding mortgage charges, and former ('also known as') names. Use this for 'where is X registered / what does it file / is it overdue / what was it called before'. Returns `{ entity, company_details, provenance, note, source }` — this is the best-populated of the UK detail tools, measured 2026-08-11 at 45 of 48 sampled UK company entities carrying a non-empty `company_details` (contrast get_financials at 11 of the same 48). Get the id from search_entities or lookup_by_identifier.",
     inputSchema: {
       type: "object",
       properties: { id: { type: "string", maxLength: 80, description: "Entity id (a UK company)." } },
@@ -390,7 +407,8 @@ const TOOLS = [
   {
     name: "get_financials",
     description:
-      "Filed financial figures for a UK company by entity id, year-over-year, from Companies House iXBRL accounts: turnover, profit/(loss), net assets, cash, shareholder funds, fixed/current assets, and employee count per reporting period. Use this for 'what are X's revenue / profit / net assets / how many employees'. Coverage is uneven — balance-sheet items and employees are broad, but turnover/profit are sparse because micro-entities file no profit-and-loss account. Get the id from search_entities.",
+      "Filed financial figures for a UK company by entity id, year-over-year, from Companies House iXBRL accounts: turnover, profit/(loss), net assets, cash, shareholder funds, fixed/current assets, and employee count per reporting period. Use this for 'what are X's revenue / profit / net assets / how many employees'. Returns `{ entity, financials, note, source }`. " +
+      "MOST ENTITIES HAVE NOTHING HERE, AND THAT IS THE NORMAL ANSWER, NOT AN ERROR. Measured 2026-08-11 on a sample of 48 UK company entities drawn from search_entities: only 11 returned any filed period — the other 37 came back HTTP 200 with an empty `financials` and a `note` saying so (even BARCLAYS BANK PLC, CH 01026167, has none loaded). Earlier versions of this description called balance-sheet coverage 'broad'; it is not. Within the accounts we DO hold, the per-field skew is real: balance-sheet items and employee counts are the well-populated ones, while turnover and profit are sparse because micro-entities file no profit-and-loss account. Read `note` before writing 'no revenue' — absent filings and a filed zero are different claims. Get the id from search_entities.",
     inputSchema: {
       type: "object",
       properties: { id: { type: "string", maxLength: 80, description: "Entity id (a UK company)." } },
@@ -401,11 +419,12 @@ const TOOLS = [
   {
     name: "get_pulse",
     description:
-      "The WhiteIntel Pulse activity feed: recent ownership / control changes across the corpus, newest first, each with a source registry. Use this to answer 'what changed recently / any recent ownership movements' or to monitor the corpus. The default (unfiltered) feed returns every kind, newest first — it is NOT ownership-only, so filter by `kind` if you want one stream. Four kinds are live and all four are cited (a source URL on effectively every row, measured 2026-08-11).",
+      "The WhiteIntel Pulse activity feed: recent corpus events — ownership/control changes, filed accounts, watchlist and sanctions designations — newest first, each with a source registry. Use this to answer 'what changed recently' or to monitor the corpus. All four kinds are live and all four are cited: measured 2026-08-11, 100 of 100 rows carried a source_url for every kind. " +
+      "THE UNFILTERED FEED IS NOT A BALANCED MIX. It applies no kind filter, but it is ordered by ingest recency, so whichever loader ran last fills the head of it. Measured 2026-08-11: the newest 100 rows of the default feed were 100% `kind: 'ownership'`, all from one registry. If you want a particular stream — or any sense of proportion between them — pass `kind` and do not infer 'nothing else happened' from the default page.",
     inputSchema: {
       type: "object",
       properties: {
-        kind: { type: "string", enum: ["ownership", "filing", "watchlist", "sanction"], description: "Optional: filter by event kind. `ownership` = registry-recorded control changes (GLEIF). `filing` = UK Companies House accounts. `watchlist` = OpenSanctions listings — politically-exposed persons, criminal/wanted entries and procurement debarments, not PEPs alone. `sanction` = a designation landing on a sanctions list (e.g. OFAC SDN). All four carry source URLs and all four appear in the default feed." },
+        kind: { type: "string", enum: ["ownership", "filing", "watchlist", "sanction"], description: "Optional: filter by event kind. Registries measured on the newest 100 rows of each stream, 2026-08-11 — they move as loaders run, so read each row's `source_registry` rather than trusting this note. `ownership` = registry-recorded control changes; today 100/100 came from `borme` (Spain's Boletín Oficial del Registro Mercantil), NOT GLEIF as earlier versions of this description claimed. `filing` = UK Companies House accounts (100/100 `companies_house`). `watchlist` = OpenSanctions non-sanctions listings — politically-exposed persons, criminal/wanted entries and procurement debarments, not PEPs alone (100/100 `opensanctions`). `sanction` = a designation landing on a sanctions list, e.g. OFAC SDN (100/100 `opensanctions`)." },
         limit: { type: "number", minimum: 1, maximum: 100, description: "Max events (default 40)." },
         since: { type: "string", description: "Optional sync cursor (ISO-8601): pass the next_since from your last response to get only events ingested after it — poll this to monitor what's new." },
       },
@@ -422,7 +441,8 @@ const TOOLS = [
       //     stamped on entities.identifier, so `nip:…` resolved to zero rows, silently.
       //   · it omitted `br-cnpj`, which IS supported and reaches our LARGEST source (Brazil RFB,
       //     65.2M rows measured 2026-08-11) — the one scheme most worth telling an agent about.
-      "Batch-resolve a list of company names or strong identifiers (scheme:value — lei, siren, gb-coh, uen, br-cnpj, sec, ofac, eu, un, uk, krs) to canonical WhiteIntel entity ids in ONE call. Each result carries a confidence: 'exact' (identifier match) or 'name' (top name hit). Use this to enrich a whole list — suppliers, counterparties, a portfolio — without one lookup per row. Then feed the ids into get_dossier / trace_ownership_path / get_sanctions. Up to 25 items anonymously, 100 with WHITEINTEL_API_KEY.",
+      "Batch-resolve a list of company names or strong identifiers (scheme:value — lei, siren, gb-coh, uen, br-cnpj, sec, ofac, eu, un, uk, krs) to canonical WhiteIntel entity ids in ONE call. Each result carries a confidence: 'exact' (identifier match) or 'name' (top name hit); an unmatched row comes back as `{ match: null, confidence: null }`, so check for it rather than assuming positional success. Use this to enrich a whole list — suppliers, counterparties, a portfolio — without one lookup per row. Then feed the ids into get_dossier / trace_ownership_path / get_sanctions. Up to 25 items anonymously (a 26th returns HTTP 400 with the limit spelled out), 100 with WHITEINTEL_API_KEY. " +
+      "TREAT `confidence: 'name'` AS A CANDIDATE, NOT A RESOLUTION. It is the top lexical hit and nothing more — measured 2026-08-11, the query 'Tesco' resolved to a FRENCH company literally named TESCO (fr-siren:454067281), not Tesco PLC, while 'gb-coh:00445790' resolved 'exact' to TESCO PLC. Confirm a 'name' match's jurisdiction and identifier before you attach it to a real counterparty; pass an identifier whenever you hold one.",
     inputSchema: {
       type: "object",
       properties: {
@@ -440,14 +460,15 @@ const TOOLS = [
   {
     name: "get_pricing",
     description:
-      "WhiteIntel's price list plus the exact machine flow for buying access. One-off cited dossiers (Standard €39: full UBO chain + financial history · Premium €99: additionally itemised assets), bulk packs (5× / 25× at a discount), subscriptions (Investigator €149/seat·mo, Business €1,900/mo) and the metered API. Returns how_an_agent_buys — buy_dossier opens a Stripe Checkout, a human (or payment-capable agent) pays, claim_dossier mints the access token, and get_dossier with that token returns the unlocked report. Static data, no network call — check it before recommending a purchase.",
+      "WhiteIntel's price list plus the exact machine flow for buying access. One-off cited dossiers (Standard €39: full UBO chain + financial history · Premium €99: additionally itemised assets), bulk packs (5× / 25× at a discount), subscriptions (Investigator €149/seat·mo, Business €1,900/mo) and the metered API. Returns how_an_agent_buys — buy_dossier opens a Stripe Checkout, a human (or payment-capable agent) pays, claim_dossier mints the access token, and get_dossier with that token returns the unlocked report. Step 0 of that list covers the case with no human present: get_payment_link returns permanent Stripe links you can hand over instead. Static data, no network call — check it before recommending a purchase.",
     inputSchema: { type: "object", properties: {} },
     handler: () => PRICING,
   },
   {
     name: "buy_dossier",
     description:
-      "Start a one-off dossier purchase via guest Stripe Checkout — no WhiteIntel account needed (Stripe collects an email for delivery). Pick a tier ('standard' €39: full UBO chain + financial history · 'premium' €99: additionally itemised assets — vessels, aircraft, securities, real estate) and optionally a bulk pack ('5' or '25' report credits; standard 5×€159 / 25×€599, premium 5×€399 — no premium 25-pack) plus the entity_id (from search_entities) the report is for. Returns checkout_url + next_steps: open the URL so payment can be completed, then feed the session_id from the post-payment redirect to claim_dossier for the access token. See get_pricing for the full price list.",
+      "Start a one-off dossier purchase via guest Stripe Checkout — no WhiteIntel account needed (Stripe collects an email for delivery). Pick a tier ('standard' €39: full UBO chain + financial history · 'premium' €99: additionally itemised assets — vessels, aircraft, securities, real estate) and optionally a bulk pack ('5' or '25' report credits; standard 5×€159 / 25×€599, premium 5×€399 — no premium 25-pack) plus the entity_id (from search_entities) the report is for. Returns checkout_url + next_steps: open the URL so payment can be completed, then feed the session_id from the post-payment redirect to claim_dossier for the access token. See get_pricing for the full price list. " +
+      "WRONG TOOL IF NOBODY IS THERE TO PAY: the session it mints is single-use and expires in 24 hours, so putting this URL in a report or a message read tomorrow hands over a dead link. Use get_payment_link for a permanent, reusable one (standard tier only — Premium is available solely through this tool). And do not fetch checkout_url yourself; it is a card form, so it must be handed to a human.",
     inputSchema: {
       type: "object",
       properties: {
@@ -482,6 +503,25 @@ const TOOLS = [
       };
     },
   },
+  // The one tool the hosted /api/mcp had and this package did not (measured 2026-08-11:
+  // hosted tools/list = 21 names, stdio = 20, the diff was exactly this one). It matters
+  // more than a parity nit: every one of the 205,497 purchase offers this company has ever
+  // served went to a machine caller with no card. buy_dossier hands back a cs_live_ session
+  // that dies in 24h and can be spent once — worthless in a report a human opens tomorrow.
+  // This returns artefacts a human can still complete next week.
+  //
+  // /api/public/paylinks measured live before shipping this tool (do not advertise an
+  // endpoint you have not called):
+  //   GET https://whiteintel.dev/api/public/paylinks -> HTTP 200, Cache-Control public,
+  //   max-age=3600, body { links: [standard:25, standard:5, standard:single], how_to_use: [4] }
+  // Note what that body does NOT contain: any premium link. The description says so.
+  {
+    name: "get_payment_link",
+    description:
+      "PERMANENT, shareable Stripe payment links for the one-off dossiers — use this INSTEAD of buy_dossier whenever you need something you can HAND TO A HUMAN. buy_dossier mints a Checkout Session that is single-use and expires in 24 hours, so it is useless in a report, a ticket or a message the human reads tomorrow; these links never expire and can be reused. Append ?client_reference_id=<entity uuid from search_entities> to bind the purchase to one company — without it the buyer gets a dossier credit, spendable on any entity later. No API key and no WhiteIntel account needed. MEASURED 2026-08-11: the response carries STANDARD-tier links only — single (€39), 5-pack (€159) and 25-pack (€599). There is no Premium payment link, so for Premium (€99) you must still use buy_dossier and have someone finish Checkout inside 24h. You cannot complete any of these yourself: the page is a card form.",
+    inputSchema: { type: "object", properties: {} },
+    handler: () => apiGet(`/api/public/paylinks`),
+  },
   {
     name: "claim_dossier",
     description:
@@ -505,7 +545,8 @@ const TOOLS = [
   {
     name: "semantic_search",
     description:
-      "Meaning-based entity search over the corpus (BGE-M3 vector ANN over the resolved dossier cards). Finds companies and people whose profile is semantically closest to a natural-language query — a description, a role, a risk pattern — even when no keyword matches. Optional kind (Company/Person/Asset) and jurisdiction (ISO code) filters. Returns entity_id, caption, kind, jurisdiction, risk and a similarity score; feed entity_id into get_dossier / trace_ownership_path. PARTIAL COVERAGE — only a small share of the corpus is currently embedded (the backfill is running); a thin or empty result is not proof the corpus is empty, so ALWAYS pair this with search_entities as a lexical fallback before concluding an entity is unknown.",
+      "Meaning-based entity search over the corpus (BGE-M3 vector ANN over the resolved dossier cards). Finds companies and people whose profile is semantically closest to a natural-language query — a description, a role, a risk pattern — even when no keyword matches. Optional kind (Company/Person/Asset) and jurisdiction (ISO code) filters. Returns entity_id, caption, kind, jurisdiction, risk and a similarity score; feed entity_id into get_dossier / trace_ownership_path. " +
+      "TODAY THIS IS EFFECTIVELY A RISK-LIST SEARCH, NOT A CORPUS SEARCH. The response carries its own `coverage` object — read it, it is authoritative and it moves. Measured 2026-08-11: embedded 990,055 of a 47,486,969 universe (ratio 0.0208), and per the endpoint's own note that embedded slice is ~99.6% risk-listed and ~97% natural persons. So a query about an ordinary trading company will return sanctioned people and vessels that merely sound related — verified: 'sanctioned russian aluminium holding' returned RU sanctioned SHIPS as its top hits. An empty or off-target result means 'not embedded yet' far more often than 'not found'. ALWAYS pair this with search_entities, which is lexical and covers the full corpus, before concluding anything about an entity's existence. Latency: 6.4s measured on a cold k=5 call — budget for it.",
     inputSchema: {
       type: "object",
       properties: {
@@ -527,7 +568,8 @@ const TOOLS = [
       // shipped on npm for weeks telling every installing agent not to bother calling this tool.
       // The real limit is coverage, not availability, and it is stated the same way here as on the
       // hosted /api/mcp so the two agent surfaces cannot disagree about what works.
-      "Entities most similar to a given one — the nearest corpus dossier cards ('more like this'), for peer discovery and clustering around a known entity. Pass an entity_id from search_entities. Returns entity_id, caption, kind, jurisdiction, risk and a similarity score. COVERAGE IS PARTIAL — only entities in the embedded risk-scored subset (~1.9% of the corpus and growing) have peers; an entity outside it returns an empty list, not an error. Fall back to semantic_search or search_entities for the rest.",
+      "Entities most similar to a given one — the nearest corpus dossier cards ('more like this'), for peer discovery and clustering around a known entity. Pass an entity_id from search_entities. Returns `{ id, count, hits }`, each hit with entity_id, caption, kind, jurisdiction, risk and a similarity score. " +
+      "COVERAGE IS PARTIAL AND SKEWED — it draws on the same embedded slice as semantic_search: 990,055 of a 47,486,969 universe (2.1%), ~99.6% risk-listed and ~97% natural persons, measured 2026-08-11 from the sibling endpoint's own `coverage` payload. An entity outside that slice returns `count: 0` with an empty `hits` array and HTTP 200 — that is 'not embedded', NOT 'no peers exist', and it is the common case for ordinary companies (verified: BARCLAYS BANK PLC returns zero). Never report an empty result as a finding about the entity. Fall back to semantic_search or search_entities.",
     inputSchema: {
       type: "object",
       properties: {
@@ -543,9 +585,12 @@ const TOOLS = [
 const TOOL_BY_NAME = Object.fromEntries(TOOLS.map((t) => [t.name, t]));
 
 const server = new Server(
-  // Keep in lockstep with package.json / server.json / claude-plugin.json — this is the
-  // version the client actually sees over the wire, and it silently drifted 0.7.0 vs 0.7.1.
-  { name: "whiteintel-mcp-server", version: "0.7.3" },
+  // Keep in lockstep with package.json / package-lock.json / server.json / claude-plugin.json —
+  // this is the version the client actually sees over the wire, and it silently drifted 0.7.0
+  // vs 0.7.1. Verify after every bump by piping an initialize request into the delivery command
+  // and reading serverInfo.version, which is how 0.7.4 was confirmed:
+  //   npx -y github:Hei33enberg/WhiteIntel-OS
+  { name: "whiteintel-mcp-server", version: "0.7.4" },
   { capabilities: { tools: {} } },
 );
 
