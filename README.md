@@ -31,7 +31,7 @@ The corporate-ownership & sanctions intelligence layer for AI agents — built f
 npx -y @whiteintel/mcp-server
 ```
 
-…starts an MCP server with **18 tools** that give any AI agent — Claude Desktop, Cursor, Cline, Windsurf, or your own runtime — **full corporate-ownership intelligence**: search by name or meaning, trace ownership chains to the UBO, screen sanctions across OFAC/EU/UN/UK, detect offshore layering, pull fully cited dossiers with financials and asset layers, and even purchase deeper intelligence through agent-initiated Stripe checkout. Every claim cited to its source, every edge traced to a registry record.
+…starts an MCP server with **20 tools** that give any AI agent — Claude Desktop, Cursor, Cline, Windsurf, or your own runtime — **full corporate-ownership intelligence**: search by name or meaning, trace ownership chains to the UBO, screen sanctions across OFAC/EU/UN/UK, detect offshore layering, pull fully cited dossiers with financials and asset layers, and even purchase deeper intelligence through agent-initiated Stripe checkout. Every claim cited to its source, every edge traced to a registry record.
 
 | Tool | What it does | Category |
 |---|---|---|
@@ -45,6 +45,8 @@ npx -y @whiteintel/mcp-server
 | `resolve` | Batch-resolve names or `scheme:value` ids → canonical entity ids + confidence | 📋 Lookup |
 | `get_dossier` | Structured, fully-cited dossier: identity, ownership/UBO chain, risk, provenance | 📊 Intelligence |
 | `trace_ownership_path` | Walk ownership upward to the ultimate beneficial owner | 📊 Intelligence |
+| `graph_neighbourhood` | Every edge within N hops of an entity, both directions — hard-capped, says when the view is partial | 🕸️ Graph |
+| `graph_path` | How two entities are connected — **bounded, not exhaustive**: `found: false` is not proof of no link | 🕸️ Graph |
 | `get_sanctions` | Sanctions exposure (OFAC/EU/UN/UK) for entity and its resolved cluster siblings | 🛡️ Risk |
 | `check_offshore_exposure` | Flag sanctioned + secrecy-jurisdiction hops in the ownership chain | 🛡️ Risk |
 | `get_company_details` | UK register detail: address, status, SIC, filings, charges, former names | 📋 Lookup |
@@ -54,7 +56,7 @@ npx -y @whiteintel/mcp-server
 | `buy_dossier` | Start a one-off dossier purchase via guest Stripe Checkout → `checkout_url` | 💳 Commerce |
 | `claim_dossier` | Redeem a paid session for a 90-day access token (idempotent) | 💳 Commerce |
 
-**18 callable tools** — 4 Discovery + 4 Lookup + 4 Intelligence + 2 Risk + 2 Commerce + 1 Feed + 1 Pricing. All read-only except `buy_dossier` (opens Stripe — money moves only when a human completes it) and `claim_dossier` (redeems an already-paid session). Ids flow between tools: search → get_dossier → trace_ownership_path → get_sanctions.
+**20 callable tools** — 4 Discovery + 4 Lookup + 4 Intelligence + 2 Graph + 2 Risk + 2 Commerce + 1 Feed + 1 Pricing. All read-only except `buy_dossier` (opens Stripe — money moves only when a human completes it) and `claim_dossier` (redeems an already-paid session). Ids flow between tools: search → get_dossier → trace_ownership_path → get_sanctions.
 
 ## Quickstart (60 seconds)
 
@@ -104,7 +106,7 @@ The `env` block is optional — omit it to use the anonymous free tier. Set `WHI
 
 An agent can buy the paid depth of a dossier end-to-end, **no WhiteIntel account needed:**
 
-1. **`buy_dossier`** `{ tier: "standard" | "premium", entity_id }` → returns a Stripe `checkout_url`. Standard (€39) unlocks the full multi-hop UBO chain + financials; Premium (€99) adds aircraft, sanctioned vessels, property and an adverse-media scan.
+1. **`buy_dossier`** `{ tier: "standard" | "premium", entity_id }` → returns a Stripe `checkout_url`. Standard (€39) unlocks the full multi-hop UBO chain + financials; Premium (€99) adds aircraft, sanctioned vessels and property; on HIGH-risk or sanctioned subjects it additionally runs a live adverse-media scan (that scan is gated — it does not run on lower-risk entities).
 2. A **human completes payment** at the `checkout_url` — Stripe collects an email and redirects back.
 3. **`claim_dossier`** `{ session_id }` → `{ token, entity_id, tier }`. Idempotent; returns `402` until paid.
 4. **`get_dossier`** `{ id, token }` → the unlocked, fully-cited dossier JSON. Tokens valid 90 days.
@@ -191,7 +193,7 @@ WhiteIntel is built and directed by [@Hei33enberg](https://github.com/Hei33enber
 ## Get on the graph
 
 ```bash
-npx -y @whiteintel/mcp-server     # 18 tools, any MCP agent
+npx -y @whiteintel/mcp-server     # 20 tools, any MCP agent
 ```
 
 - **Install** — drop the server into Claude Desktop, Cursor, Cline, Windsurf, or your own runtime (see [Quickstart](#quickstart-60-seconds)).

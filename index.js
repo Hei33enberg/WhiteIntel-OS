@@ -7,7 +7,7 @@
  * search the corpus of companies and people, and trace ownership chains to the
  * ultimate beneficial owner.
  *
- * Data: ~116.2M entities fused across 30 public/semi-public registries — OpenOwnership,
+ * Data: ~116.2M entities fused across 29 public/semi-public registries — OpenOwnership,
  * GLEIF, ICIJ Offshore Leaks, SEC EDGAR, Cyprus DRCOR, sanctions/PEP lists and more —
  * cross-source resolved onto one cited identity spine, plus live UK Companies House
  * lookups. Entity count read from /api/public/stats on 2026-08-11 (116,163,032, itself a
@@ -289,6 +289,44 @@ const TOOLS = [
     },
     handler: (a) => apiGet(`/api/public/ownership-path${qs({ root: a.root, max_depth: a.max_depth ?? 6 })}`),
   },
+  // ── bounded graph walk (S13·P3, LINEAR-4806; DB migration 0295) ───────────────
+  // Every bound is a CONSTANT inside the Postgres function, not a parameter of these
+  // tools. An agent can ask for less; there is no argument that asks for more. This is
+  // the direct lesson of /api/public/similar, which once consumed 3.8 GB on a single
+  // call and returned 503 because its cost was a function of the data, not of the
+  // contract. The descriptions state the bounds because an agent that reads
+  // `found: false` as "not connected" will write that sentence into a due-diligence
+  // report — and a bounded search has not earned that sentence.
+  {
+    name: "graph_neighbourhood",
+    description:
+      "Return every ownership/control edge within a bounded number of hops of one entity, in BOTH directions: who it controls, who controls it, and their neighbours. Use it to answer 'what sits around this company?' — the wider view that trace_ownership_path (upward only) does not give. Hard-capped in the database: depth 3, 300 edges, and at most 25 edges followed per entity per direction per hop. If the edge budget is exhausted the response sets `truncated: true` with a plain-language note; that is NORMAL for hub entities (the corpus holds single nodes with more than 22,000 edges) and means the picture is partial, not wrong. Each edge carries `origin`: 'registry' (observed in a source registry) or 'derived'/'curated'/'asserted' (inferred by WhiteIntel). Get the root id from search_entities or resolve.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        root: { type: "string", maxLength: 80, description: "Root entity uuid." },
+        depth: { type: "number", minimum: 1, maximum: 3, description: "Hops to walk (default 2). Also capped by your plan." },
+        edges: { type: "number", minimum: 10, maximum: 300, description: "Edge budget (default 120). Lower it for a legible picture, raise it for completeness." },
+      },
+      required: ["root"],
+    },
+    handler: (a) => apiGet(`/api/public/graph/neighbourhood${qs({ root: a.root, depth: a.depth ?? 2, edges: a.edges ?? 120 })}`),
+  },
+  {
+    name: "graph_path",
+    description:
+      "Find how two entities are connected: a bounded breadth-first search over ownership and control edges in both directions, returning the ordered hops from one to the other. WARNING, AND IT CHANGES HOW YOU MUST REPORT THE RESULT: this search is BOUNDED, NOT EXHAUSTIVE. At most 15 edges are followed per entity, per direction, per hop, so a genuine connection running through a heavily-connected intermediary can be missed. `found: false` means NO PATH WAS FOUND WITHIN THOSE BOUNDS — it is NOT evidence that the two entities are unconnected, and must never be reported as a clean result. The response always carries `exhaustive: false` and a `bounds_note` restating this.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        from: { type: "string", maxLength: 80, description: "Start entity uuid." },
+        to: { type: "string", maxLength: 80, description: "End entity uuid." },
+        max_depth: { type: "number", minimum: 1, maximum: 4, description: "Max hops (default 3). Depth 4 is measurably slower on densely connected entities — request it deliberately." },
+      },
+      required: ["from", "to"],
+    },
+    handler: (a) => apiGet(`/api/public/graph/path${qs({ from: a.from, to: a.to, max_depth: a.max_depth ?? 3 })}`),
+  },
   {
     name: "lookup_by_identifier",
     description:
@@ -377,7 +415,14 @@ const TOOLS = [
   {
     name: "resolve",
     description:
-      "Batch-resolve a list of company names or strong identifiers (scheme:value — lei, siren, gb-coh, uen, nip, sec, ofac, eu, un, uk, krs) to canonical WhiteIntel entity ids in ONE call. Each result carries a confidence: 'exact' (identifier match) or 'name' (top name hit). Use this to enrich a whole list — suppliers, counterparties, a portfolio — without one lookup per row. Then feed the ids into get_dossier / trace_ownership_path / get_sanctions. Up to 25 items anonymously, 100 with WHITEINTEL_API_KEY.",
+      // SCHEME LIST — KEEP IT IDENTICAL TO lookup_by_identifier's enum ABOVE AND TO app
+      // IDENTIFIER_SCHEMES (intel.server.ts). This string drifted in BOTH directions and an
+      // agent has no way to find that out except by getting nothing back:
+      //   · it advertised `nip`, which LINEAR-5147 removed everywhere else — no Polish NIP is
+      //     stamped on entities.identifier, so `nip:…` resolved to zero rows, silently.
+      //   · it omitted `br-cnpj`, which IS supported and reaches our LARGEST source (Brazil RFB,
+      //     65.2M rows measured 2026-08-11) — the one scheme most worth telling an agent about.
+      "Batch-resolve a list of company names or strong identifiers (scheme:value — lei, siren, gb-coh, uen, br-cnpj, sec, ofac, eu, un, uk, krs) to canonical WhiteIntel entity ids in ONE call. Each result carries a confidence: 'exact' (identifier match) or 'name' (top name hit). Use this to enrich a whole list — suppliers, counterparties, a portfolio — without one lookup per row. Then feed the ids into get_dossier / trace_ownership_path / get_sanctions. Up to 25 items anonymously, 100 with WHITEINTEL_API_KEY.",
     inputSchema: {
       type: "object",
       properties: {
@@ -500,7 +545,7 @@ const TOOL_BY_NAME = Object.fromEntries(TOOLS.map((t) => [t.name, t]));
 const server = new Server(
   // Keep in lockstep with package.json / server.json / claude-plugin.json — this is the
   // version the client actually sees over the wire, and it silently drifted 0.7.0 vs 0.7.1.
-  { name: "whiteintel-mcp-server", version: "0.7.2" },
+  { name: "whiteintel-mcp-server", version: "0.7.3" },
   { capabilities: { tools: {} } },
 );
 

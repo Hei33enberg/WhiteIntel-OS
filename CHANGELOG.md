@@ -1,5 +1,64 @@
 # Changelog
 
+## 0.7.3 — 2026-08-11 — bounded graph walk (2 new tools, 18 → 20)
+
+The app-side API and the DB functions landed first (WhiteIntel migration 0295, LINEAR-4806);
+this package describes them so the two surfaces stay in step. Both endpoints were measured live
+against production before this version was cut, not assumed from the route files:
+
+```
+GET /api/public/graph/neighbourhood?root=<uuid>&depth=2&edges=120  ->  200 in 0.96s
+GET /api/public/graph/path?from=<uuid>&to=<uuid>&max_depth=3       ->  200 (400 + a clear
+                                                                        message when from == to)
+```
+
+### Install channel changed: `claude-plugin.json` and `mcp.json` now install from GitHub
+
+Measured 2026-08-11: `npm view @whiteintel/mcp-server version` returns **0.7.0** while this source
+tree is 0.7.3. Anyone installing through the plugin catalogue was therefore getting a package three
+versions behind — 18 tools, no graph tools at all, and a `find_similar` description that told the
+calling agent the tool was broken when it was not.
+
+This package has no build step and the repository is public, so `github:` resolves to exactly this
+code:
+
+```
+npx -y github:Hei33enberg/WhiteIntel-OS
+```
+
+Both manifests now point there. `server.json` still declares the npm package, because that is what
+the MCP registry entry describes — switch every one of them back to `@whiteintel/mcp-server` on the
+day `npm view` reports the current version.
+
+### Corpus figures corrected again
+
+`index.js`, `server.json` and `claude-plugin.json` each claimed **30 registries**. Measured from
+`/api/public/stats` at 2026-08-11 05:30Z: **29**. The entity count, ~116.2M, was already right
+(116,163,032). This is the third consecutive release in which a hardcoded corpus number in a
+manifest was wrong — the manifests are what the catalogue and the installer read, and they are the
+files that keep getting missed.
+
+- **`graph_neighbourhood`** — every ownership/control edge within N hops of an entity, in
+  BOTH directions. Fills the hole between `get_entity` (direct relationships only) and
+  `trace_ownership_path` (upward only). Depth 1–3, edge budget 10–300.
+- **`graph_path`** — the ordered hops connecting two entities, or an explicit "not found
+  within these bounds".
+
+**The bounds are in the database, not in this package.** Depth, edge budget and a
+per-entity fan-out cap are constants inside the Postgres functions; no tool argument can
+widen them. Measured on the fattest node in the corpus (22,420 edges on one entity):
+a full-cap neighbourhood returns in 9.6 ms, and the caps hold even when the caller asks
+for depth 99 and a million edges. This is deliberate history — `/api/public/similar` once
+consumed 3.8 GB on a single call and answered 503 because its cost tracked the data
+instead of the contract.
+
+**`graph_path` reports a bounded negative, and says so.** At most 15 edges are followed
+per entity, per direction, per hop. `found: false` means no path was found within those
+bounds; it is not evidence that two entities are unconnected, and the payload carries
+`exhaustive: false` plus a `bounds_note` so an agent cannot honestly write "no link"
+into a report. A due-diligence tool that turns "we did not look far enough" into a clean
+bill of health is worse than one that returns nothing.
+
 ## 0.7.2 — 2026-08-11
 
 Descriptions, manifests and docs only — no behaviour change, no new tools (still 18).

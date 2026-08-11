@@ -2,7 +2,7 @@
   "mcpServers": {
     "whiteintel": {
       "command": "npx",
-      "args": ["-y", "@whiteintel/mcp-server"],
+      "args": ["-y", "github:Hei33enberg/WhiteIntel-OS"],
       "env": {
         "WHITEINTEL_API_KEY": "wi_YOUR_KEY_OPTIONAL"
       }

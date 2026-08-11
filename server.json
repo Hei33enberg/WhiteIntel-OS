@@ -1,19 +1,19 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
   "name": "dev.whiteintel/mcp-server",
-  "description": "Corporate & offshore ownership intelligence for AI agents — search ~116.2M entities across 30 registries, screen sanctions (OFAC/EU/UN/UK), trace ownership chains to the ultimate beneficial owner, and buy fully-cited dossiers in-flow. Freemium: anonymous free tier; wi_ API key lifts limits.",
+  "description": "Corporate & offshore ownership intelligence for AI agents — search ~116.2M entities across 29 registries, screen sanctions (OFAC/EU/UN/UK), trace ownership chains to the ultimate beneficial owner, walk the ownership graph around an entity or between two entities, and buy fully-cited dossiers in-flow. 20 tools. Freemium: anonymous free tier; wi_ API key lifts limits.",
   "repository": {
     "url": "https://github.com/Hei33enberg/whiteintel-mcp-server",
     "source": "github"
   },
   "version_detail": {
-    "version": "0.7.2"
+    "version": "0.7.3"
   },
   "packages": [
     {
       "registry_name": "npm",
       "name": "@whiteintel/mcp-server",
-      "version": "0.7.2",
+      "version": "0.7.3",
       "runtime_hint": "npx",
       "transport": { "type": "stdio" },
       "environment_variables": [
