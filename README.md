@@ -15,15 +15,15 @@ The corporate-ownership & sanctions intelligence layer for AI agents — built f
 [![License: MIT](https://img.shields.io/badge/License-MIT-2f7d4f.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-7c3aed.svg)](https://modelcontextprotocol.io)
 [![Tools](https://img.shields.io/badge/tools-18%20live-00ff7f)](https://whiteintel.dev/developers)
-[![Corpus](https://img.shields.io/badge/corpus-114.8M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
-[![Sources](https://img.shields.io/badge/sources-29%20fused-2f7d4f)](https://whiteintel.dev/sources)
+[![Corpus](https://img.shields.io/badge/corpus-116.2M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
+[![Sources](https://img.shields.io/badge/sources-30%20fused-2f7d4f)](https://whiteintel.dev/sources)
 [![whiteintel.dev](https://img.shields.io/badge/site-whiteintel.dev-5af082)](https://whiteintel.dev)
 
 </div>
 
 ---
 
-## What's live today (0.7.0)
+## What's live today (0.7.2)
 
 **One command, any MCP agent:**
 
@@ -113,12 +113,14 @@ Check **`get_pricing`** first — it returns the full price list plus this flow 
 
 ## The corpus
 
-**114.8M+ entities across 29 fused registries** — every claim cited, every edge traced:
+**~116.2M entities across 30 fused registries** — every claim cited, every edge traced.
+
+*Measured 2026-08-11 from [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats) (`entities` = 116,163,032, itself a planner estimate). That endpoint rebuilds its source map by counting registries, so it is always the authority — and a new source shows up there without anyone editing this file.*
 
 | Source | What | Coverage |
 |---|---|---|
 | **OpenOwnership** | UK PSCs (Persons with Significant Control) | 🇬🇧 Full |
-| **GLEIF** | Global LEI registry — legal entity identifiers | 🌍 Global |
+| **GLEIF** | Global LEI registry + parent/child ownership relations — nightly refresh scheduled | 🌍 Global |
 | **ACRA Singapore** | Singapore company registry | 🇸🇬 Full |
 | **ICIJ Offshore Leaks** | Panama Papers, Paradise Papers, Pandora Papers | 🌍 Offshore |
 | **SEC EDGAR** | US securities filings + beneficial ownership | 🇺🇸 Full |
@@ -126,8 +128,19 @@ Check **`get_pricing`** first — it returns the full price list plus this flow 
 | **FAA** | US aircraft registry (tail numbers → owners) | 🇺🇸 Full |
 | **France SIRENE** | French company register | 🇫🇷 Full |
 | **Brazil RFB** | Brazilian federal revenue — CNPJ register | 🇧🇷 Full |
+| **Cyprus DRCOR** | Cypriot register — **officers only** (see scope note below) | 🇨🇾 Loading |
 | **OFAC / EU / UN / UK** | Consolidated sanctions lists | 🌍 Live |
-| **+ 17 more** | registries, sanctions lists & UBO registers | 🌍 Growing |
+| **+ 15 more** | registries, sanctions lists & UBO registers | 🌍 Growing |
+
+### Cyprus — what it is, and what it is not
+
+Cyprus went to production on **2026-08-11** and is **still loading** — so we quote no frozen row count here; ask [`/api/public/stats`](https://whiteintel.dev/api/public/stats) for the current figure.
+
+**Read this before you sell it as Cyprus ownership coverage — it is not.** The Cypriot open data release covers the **nominal layer only: directors, secretaries and trade-name owners.** It contains **no shareholders and no beneficial owners.** Measured on the loaded edges, every single Cyprus relationship is a `Directorship` (Director, Secretary, Authorised Person, general partner) — there is not one ownership edge in it. So a Cypriot company will typically answer `trace_ownership_path` and `check_offshore_exposure` with `no_ownership_data`: that verdict means *we hold no ownership edges*, **not** *this company is cleanly owned*.
+
+Cypriot records carry a `cy-reg:` identifier. `lookup_by_identifier` does **not** accept that scheme — reach them with `search_entities` using `juris: "cy"`.
+
+> Contains information from the Cyprus Department of Registrar of Companies and Intellectual Property, licensed under CC BY 4.0.
 
 **Semantic search** (`semantic_search` / `find_similar`) runs over resolved dossier cards using BGE-M3 embeddings; coverage grows as the embedding backfill completes. Lexical `search_entities` always covers the full corpus.
 
@@ -146,7 +159,8 @@ Existing corporate-ownership tools were built for compliance analysts clicking w
 
 ## Data & honesty
 
-- **Live corpus:** ~114.8M entities across 29 fused registries. Live counts: [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats).
+- **Live corpus:** ~116.2M entities across 30 fused registries (measured 2026-08-11). Live counts, always authoritative over this file: [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats).
+- **Sources are not uniformly deep.** A registry in the list means we hold *what that registry publishes* — which for some jurisdictions is the officer layer, not ownership. Cyprus is the clearest case (see the scope note above). Never read presence in the source table as ownership coverage.
 - An absent edge means "not yet observed", not "does not exist".
 - Investigative **decision-support**, not a legal determination of beneficial ownership.
 - Semantic search coverage grows as the embedding backfill completes — lexical search always covers the full corpus.

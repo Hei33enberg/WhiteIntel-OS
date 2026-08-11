@@ -7,9 +7,12 @@
  * search the corpus of companies and people, and trace ownership chains to the
  * ultimate beneficial owner.
  *
- * Data: ~114.8M entities fused across 29 public/semi-public registries — OpenOwnership,
- * GLEIF, ICIJ Offshore Leaks, SEC EDGAR, sanctions/PEP lists and more — cross-source
- * resolved onto one cited identity spine, plus live UK Companies House lookups.
+ * Data: ~116.2M entities fused across 30 public/semi-public registries — OpenOwnership,
+ * GLEIF, ICIJ Offshore Leaks, SEC EDGAR, Cyprus DRCOR, sanctions/PEP lists and more —
+ * cross-source resolved onto one cited identity spine, plus live UK Companies House
+ * lookups. Entity count read from /api/public/stats on 2026-08-11 (116,163,032, itself a
+ * planner estimate); the live figure is always at whiteintel.dev/api/public/stats, whose
+ * source map is rebuilt by counting registries — new sources appear there on their own.
  *
  * Freemium. Without a key, calls hit the anonymous free tier. Set WHITEINTEL_API_KEY
  * (a wi_… key from whiteintel.dev → Settings → API keys) to authenticate as your
@@ -231,7 +234,7 @@ const TOOLS = [
   {
     name: "search_entities",
     description:
-      "Search every node in the live WhiteIntel corpus — companies AND people — by name, across all fused sources. Returns entity ids you then pass to get_entity or trace_ownership_path. Each hit is flagged with its source.",
+      "Search every node in the live WhiteIntel corpus — companies AND people — by name, across all fused sources. This is the lexical search and it always covers the FULL corpus, so it is the fallback whenever semantic_search comes back thin. Returns entity ids you then pass to get_entity or trace_ownership_path. Each hit's `source` says whether it came from the resolved corpus or a live registry passthrough — it does NOT name the originating registry; for that provenance call get_entity (registry_profile) or get_dossier, which cite per-record source URLs. Use `juris` to scope to a country (e.g. gb, ky, us, cy).",
     inputSchema: {
       type: "object",
       properties: {
@@ -289,7 +292,7 @@ const TOOLS = [
   {
     name: "lookup_by_identifier",
     description:
-      "Resolve an entity by a strong external identifier instead of a name — a LEI, OFAC SDN uid, EU/UN/UK sanctions id, Singapore UEN, SEC CIK, Polish KRS, UK Companies House number, French SIREN, or Brazil RFB CNPJ. Returns the single resolved entity (id, type, jurisdiction, identifier, risk) so you can pivot into get_entity / get_dossier / get_sanctions. Use this when you already hold a registry id and want the corpus node behind it.",
+      "Resolve an entity by a strong external identifier instead of a name — a LEI, OFAC SDN uid, EU/UN/UK sanctions id, Singapore UEN, SEC CIK, Polish KRS, UK Companies House number, French SIREN, or Brazil RFB CNPJ. Returns the single resolved entity (id, type, jurisdiction, identifier, risk) so you can pivot into get_entity / get_dossier / get_sanctions. Use this when you already hold a registry id and want the corpus node behind it. NOT every identifier you may see in a response is resolvable here — the enum below is the complete accepted set and the route hard-rejects anything else with a 400. In particular Cyprus records carry a `cy-reg:` identifier that this tool does NOT accept: reach Cypriot companies with search_entities using juris='cy'.",
     // LINEAR-5147: `nip` removed — no Polish NIP is stamped onto entities.identifier today
     // (they live only in props->>'nip' on `krs:` rows), so the scheme resolved to nothing.
     // Keep this enum aligned with app IDENTIFIER_SCHEMES; the server-side by-identifier
@@ -360,11 +363,11 @@ const TOOLS = [
   {
     name: "get_pulse",
     description:
-      "The WhiteIntel Pulse activity feed: recent ownership / control changes across the corpus, newest first, each with a source registry. Use this to answer 'what changed recently / any recent ownership movements' or to monitor the corpus. The default (unfiltered) feed only returns events that carry a source URL. Optional kind filter — ownership | filing are cited; watchlist (OpenSanctions PEP listings) is opt-in and is currently uncited (source-url NULL for every row).",
+      "The WhiteIntel Pulse activity feed: recent ownership / control changes across the corpus, newest first, each with a source registry. Use this to answer 'what changed recently / any recent ownership movements' or to monitor the corpus. The default (unfiltered) feed returns every kind, newest first — it is NOT ownership-only, so filter by `kind` if you want one stream. Four kinds are live and all four are cited (a source URL on effectively every row, measured 2026-08-11).",
     inputSchema: {
       type: "object",
       properties: {
-        kind: { type: "string", enum: ["ownership", "filing", "watchlist"], description: "Optional: filter by event kind. `ownership` (GLEIF control changes) and `filing` (UK Companies House accounts) are cited. `watchlist` (OpenSanctions PEP listings) is currently uncited and is filtered OUT of the default feed — pass kind=watchlist explicitly if you want it." },
+        kind: { type: "string", enum: ["ownership", "filing", "watchlist", "sanction"], description: "Optional: filter by event kind. `ownership` = registry-recorded control changes (GLEIF). `filing` = UK Companies House accounts. `watchlist` = OpenSanctions listings — politically-exposed persons, criminal/wanted entries and procurement debarments, not PEPs alone. `sanction` = a designation landing on a sanctions list (e.g. OFAC SDN). All four carry source URLs and all four appear in the default feed." },
         limit: { type: "number", minimum: 1, maximum: 100, description: "Max events (default 40)." },
         since: { type: "string", description: "Optional sync cursor (ISO-8601): pass the next_since from your last response to get only events ingested after it — poll this to monitor what's new." },
       },
@@ -495,7 +498,9 @@ const TOOLS = [
 const TOOL_BY_NAME = Object.fromEntries(TOOLS.map((t) => [t.name, t]));
 
 const server = new Server(
-  { name: "whiteintel-mcp-server", version: "0.7.0" },
+  // Keep in lockstep with package.json / server.json / claude-plugin.json — this is the
+  // version the client actually sees over the wire, and it silently drifted 0.7.0 vs 0.7.1.
+  { name: "whiteintel-mcp-server", version: "0.7.2" },
   { capabilities: { tools: {} } },
 );
 

@@ -1,5 +1,52 @@
 # Changelog
 
+## 0.7.2 — 2026-08-11
+
+Descriptions, manifests and docs only — no behaviour change, no new tools (still 18).
+
+- **Cyprus (DRCOR) is live, and the README says exactly how far it goes.** New source,
+  loading since 2026-08-11, licensed CC BY 4.0 (attribution carried in the README).
+  Scope is stated bluntly because it is easy to oversell: the Cypriot open data is the
+  **nominal layer — directors, secretaries, trade-name owners — with no shareholders and
+  no beneficial owners.** Every Cyprus edge measured is a `Directorship`; there is not one
+  ownership edge. Cypriot companies therefore answer `trace_ownership_path` /
+  `check_offshore_exposure` with `no_ownership_data`, which means "no ownership edges held",
+  not "cleanly owned". No row count is frozen into the docs while the load is still running.
+- **`lookup_by_identifier` documents a trap it already had.** Cyprus records surface a
+  `cy-reg:` identifier, but the route hard-rejects that scheme with a 400 (verified against
+  the live API). The description now says so and points to `search_entities juris='cy'`.
+  The enum is unchanged — the fix belongs in the description, not the API.
+- **`get_pulse` was wrong on three counts and is now measured.** It claimed `watchlist` was
+  "currently uncited (source-url NULL for every row)" and "filtered OUT of the default feed".
+  Measured: all 47,784 watchlist rows carry a source URL, and they do appear in the default
+  feed. It also called them "PEP listings" when they are PEP (33,685) + criminal/wanted
+  (9,584) + procurement debarment (4,515). And a fourth live kind, **`sanction`** (209 rows,
+  all cited), was missing from the enum, so agents could not filter for it even though the
+  API serves it. Added.
+- **`search_entities` stops overpromising provenance.** It said "each hit is flagged with its
+  source"; the per-hit `source` field only distinguishes resolved corpus from live-registry
+  passthrough and never names the originating registry. Reworded, and it now points at
+  `get_entity` / `get_dossier` for real per-record citations.
+- **GLEIF ownership relations now have a nightly refresh scheduled** (the stream had been
+  frozen since 2026-07-09). Stated as *scheduled*, not *verified*: the job is active, but
+  the loader ledger records no completed GLEIF pass yet, so `source_freshness()` still
+  reports the source as untracked. It will say otherwise once a pass lands.
+- **Corpus counts corrected everywhere, including the two files the last pass missed.**
+  0.7.1 claimed in its commit message to fix the count "everywhere it appears" but only
+  touched the README and `index.js`; `claude-plugin.json` and `server.json` kept shipping
+  ~102.3M / 29 and received nothing but a version bump. All four now read ~116.2M / 30,
+  measured 2026-08-11 from `/api/public/stats`.
+- **Version drift fixed.** `index.js` still announced itself to clients as `0.7.0` while the
+  package was `0.7.1`. The wire version, `package.json`, `server.json` and
+  `claude-plugin.json` are now all `0.7.2`.
+
+## 0.7.1 — 2026-08-10
+
+- `find_similar` stopped telling every installing agent it was dead: the "TEMPORARILY
+  UNAVAILABLE … returns 503" note was true only while the ANN index was dropped, and the
+  index has been rebuilt as IVFFlat. The real limit is coverage (~1.9% of the corpus
+  embedded), and an entity outside it gets an empty list, not an error.
+
 ## 0.7.0 — 2026-07-22
 
 - **Semantic (meaning-based) retrieval.** Two new tools over the corpus-RAG dossier
