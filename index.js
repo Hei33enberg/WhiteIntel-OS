@@ -7,7 +7,7 @@
  * search the corpus of companies and people, and trace ownership chains to the
  * ultimate beneficial owner.
  *
- * Data: ~116.2M entities fused across 29 public/semi-public registries — OpenOwnership,
+ * Data: ~118.0M entities fused across 31 public/semi-public registries — OpenOwnership,
  * GLEIF, ICIJ Offshore Leaks, SEC EDGAR, Cyprus DRCOR, sanctions/PEP lists and more —
  * cross-source resolved onto one cited identity spine, plus live UK Companies House
  * lookups. Entity count read from /api/public/stats on 2026-08-11 (116,163,032, itself a
@@ -309,14 +309,14 @@ const TOOLS = [
     name: "graph_neighbourhood",
     description:
       "Return every ownership/control edge within a bounded number of hops of one entity, in BOTH directions: who it controls, who controls it, and their neighbours. Use it to answer 'what sits around this company?' — the wider view that trace_ownership_path (upward only) does not give. Hard-capped in the database: depth 3, 300 edges, and at most 25 edges followed per entity per direction per hop. " +
-      "READ `depth` IN THE RESPONSE — DO NOT ASSUME YOU GOT THE DEPTH YOU ASKED FOR. The walk can come back shallower than requested and `truncated` does NOT signal that; the depth signals are `depth` (how deep it actually went) and `depth_capped`. Measured 2026-08-11 on an anonymous caller: depth=3 requested returned depth=2 with depth_capped=true, because the free plan caps every walk at 2 hops. Any sentence you write about what is or is not around this entity must be scoped to the RETURNED depth. " +
+      "READ THE DEPTH FIELDS IN THE RESPONSE — DO NOT ASSUME YOU GOT THE DEPTH YOU ASKED FOR. There is no field called `depth` any more, and that rename is deliberate: the old `depth` was the CLAMPED REQUEST, never the depth walked, and it was being read as a promise. The response now carries `depth_requested` (what your plan allowed), `depth_walked` (measured off the returned edges' own hop numbers — the only depth that is actually proven), `depth_capped`, and `completeness`. Measured 2026-08-11 on an anonymous caller: depth=3 requested returned depth=2 with depth_capped=true, because the free plan caps every walk at 2 hops. Any sentence you write about what is or is not around this entity must be scoped to the RETURNED depth. " +
       "TWO MORE THINGS THE PAYLOAD DOES NOT SAY ABOUT ITSELF, both measured 2026-08-11: (1) at depth 2 or more the edge list REPEATS edges — the same from/to/predicate came back twice on every root tested (raw vs distinct: 59/33, 133/91, 48/35), so de-duplicate before counting relationships or drawing a graph; (2) `edge_count` counts that raw, duplicated list and the duplicates are charged against your `edges` budget, so a run can report `truncated: true` while holding far fewer distinct edges than the budget you set. A fix to the database function is in flight and is NOT reflected here — this describes what the endpoint returns today. " +
       "`truncated: true` plus a plain-language `truncation_note` does work and does mean the edge budget ran out (verified with edges=10); that is NORMAL for hub entities (the corpus holds single nodes with more than 22,000 edges) and means the picture is partial, not wrong. Each edge carries `origin`: 'registry' (observed in a source registry) or 'derived'/'curated'/'asserted' (inferred by WhiteIntel). Get the root id from search_entities or resolve.",
     inputSchema: {
       type: "object",
       properties: {
         root: { type: "string", maxLength: 80, description: "Root entity uuid." },
-        depth: { type: "number", minimum: 1, maximum: 3, description: "Hops to walk (default 2). A REQUEST, not a guarantee — the plan caps it (anonymous callers measured at 2 hops) and the response's `depth` is the authority." },
+        depth: { type: "number", minimum: 1, maximum: 3, description: "Hops to walk (default 2). A REQUEST, not a guarantee — the plan caps it (anonymous callers measured at 2 hops) and the response's `depth_walked` is the authority — it is measured from the edges that came back, not echoed from your request." },
         edges: { type: "number", minimum: 10, maximum: 300, description: "Edge budget (default 120). Lower it for a legible picture, raise it for completeness." },
       },
       required: ["root"],

@@ -14,16 +14,16 @@ The corporate-ownership & sanctions intelligence layer for AI agents — built f
 [![CI](https://github.com/Hei33enberg/whiteintel-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/Hei33enberg/whiteintel-mcp-server/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-2f7d4f.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-7c3aed.svg)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-18%20live-00ff7f)](https://whiteintel.dev/developers)
-[![Corpus](https://img.shields.io/badge/corpus-116.2M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
-[![Sources](https://img.shields.io/badge/sources-30%20fused-2f7d4f)](https://whiteintel.dev/sources)
+[![Tools](https://img.shields.io/badge/tools-21%20live-00ff7f)](https://whiteintel.dev/developers)
+[![Corpus](https://img.shields.io/badge/corpus-118.0M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
+[![Sources](https://img.shields.io/badge/sources-31%20fused-2f7d4f)](https://whiteintel.dev/sources)
 [![whiteintel.dev](https://img.shields.io/badge/site-whiteintel.dev-5af082)](https://whiteintel.dev)
 
 </div>
 
 ---
 
-## What's live today (0.7.2)
+## What's live today
 
 **One command, any MCP agent:**
 
@@ -118,7 +118,7 @@ Check **`get_pricing`** first — it returns the full price list plus this flow 
 
 ## The corpus
 
-**~116.2M entities across 30 fused registries** — every claim cited, every edge traced.
+**~118.0M entities across 31 fused registries** — every claim cited, every edge traced.
 
 *Measured 2026-08-11 from [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats) (`entities` = 116,163,032, itself a planner estimate). That endpoint rebuilds its source map by counting registries, so it is always the authority — and a new source shows up there without anyone editing this file.*
 
@@ -141,7 +141,9 @@ Check **`get_pricing`** first — it returns the full price list plus this flow 
 
 Cyprus went to production on **2026-08-11** and is **still loading** — so we quote no frozen row count here; ask [`/api/public/stats`](https://whiteintel.dev/api/public/stats) for the current figure.
 
-**Read this before you sell it as Cyprus ownership coverage — it is not.** The Cypriot open data release covers the **nominal layer only: directors, secretaries and trade-name owners.** It contains **no shareholders and no beneficial owners.** Measured on the loaded edges, every single Cyprus relationship is a `Directorship` (Director, Secretary, Authorised Person, general partner) — there is not one ownership edge in it. So a Cypriot company will typically answer `trace_ownership_path` and `check_offshore_exposure` with `no_ownership_data`: that verdict means *we hold no ownership edges*, **not** *this company is cleanly owned*.
+**Read this before you sell it as Cyprus ownership coverage — it is not.** The Cypriot open data release covers the **nominal layer only: directors, secretaries and trade-name owners.** It contains **no shareholders and no beneficial owners.** Measured on a sample of the loaded edges, roughly **93% are `Directorship`** (Director, Secretary, Authorised Person, general partner) and the remaining **~7% carry the `Ownership` schema with role `Owner`** — those are trade-name proprietorships, a sole trader registered behind a business name, not shareholding in a company. An earlier version of this paragraph said there was "not one ownership edge" in the Cyprus data; that was wrong, and it is corrected here rather than quietly deleted, because a claim about what a source does not contain is exactly the kind of sentence a buyer relies on.
+
+The practical consequence is unchanged and is the part that matters: a Cypriot **company** will typically answer `trace_ownership_path` and `check_offshore_exposure` with `no_ownership_data`. That verdict means *we hold no ownership edges for this subject*, **not** *this company is cleanly owned*. Do not read the 7% as shareholder coverage — it is not.
 
 Cypriot records carry a `cy-reg:` identifier. `lookup_by_identifier` does **not** accept that scheme — reach them with `search_entities` using `juris: "cy"`.
 
@@ -164,7 +166,7 @@ Existing corporate-ownership tools were built for compliance analysts clicking w
 
 ## Data & honesty
 
-- **Live corpus:** ~116.2M entities across 30 fused registries (measured 2026-08-11). Live counts, always authoritative over this file: [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats).
+- **Live corpus:** ~118.0M entities across 31 fused registries (measured 2026-08-11 16:45Z). Live counts, always authoritative over this file: [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats).
 - **Sources are not uniformly deep.** A registry in the list means we hold *what that registry publishes* — which for some jurisdictions is the officer layer, not ownership. Cyprus is the clearest case (see the scope note above). Never read presence in the source table as ownership coverage.
 - An absent edge means "not yet observed", not "does not exist".
 - Investigative **decision-support**, not a legal determination of beneficial ownership.
