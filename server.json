@@ -7,13 +7,13 @@
     "source": "github"
   },
   "version_detail": {
-    "version": "0.7.4"
+    "version": "0.7.5"
   },
   "packages": [
     {
       "registry_name": "npm",
       "name": "@whiteintel/mcp-server",
-      "version": "0.7.4",
+      "version": "0.7.5",
       "runtime_hint": "npx",
       "transport": { "type": "stdio" },
       "environment_variables": [
