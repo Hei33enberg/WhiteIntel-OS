@@ -112,3 +112,56 @@ test("resolve's advertised scheme list matches lookup_by_identifier's enum", () 
     `resolve's scheme prose and lookup_by_identifier's enum disagree — onlyEnum=${JSON.stringify(onlyEnum)} onlyProse=${JSON.stringify(onlyProse)}. Align the resolve description and the enum in index.js.`,
   );
 });
+
+test("every corpus figure (entity total + source count) is identical across all manifests", () => {
+  // Two numbers agents read — "~118.0M entities" and "31 registries/sources" — are hand-copied into
+  // several slots each: server.json, claude-plugin.json, README.md (a %20-encoded shields badge + two
+  // prose lines) and index.js's header comment. A data refresh bumps whiteintel.dev/api/public/stats
+  // and someone edits server.json + the README prose but forgets the badge (the digit is URL-encoded
+  // and easy to miss) or index.js — and the pack ships advertising two different corpus sizes,
+  // silently, exactly the way 0.7.0 shipped a stale count. This is the tool-count guard applied to
+  // the other two figures. No file is a source of truth for these, so the invariant is pure internal
+  // consistency: every occurrence must equal every other. Network-free — the live count is
+  // authoritative over the repo, but the repo must at least agree with itself.
+  const files = {
+    "server.json": read("../server.json"),
+    "claude-plugin.json": read("../claude-plugin.json"),
+    "README.md": read("../README.md"),
+    "index.js": read("../index.js"),
+  };
+
+  const entity = {}; // file -> distinct "<n>M entities" figures found
+  const source = {}; // file -> distinct "<n> registries/sources" counts found
+  for (const [where, raw] of Object.entries(files)) {
+    // Collapse shields %20 escapes so a badge reads like the surrounding prose.
+    const text = raw.replace(/%20/g, " ");
+    // "<n>M entities" — deliberately NOT "<n>M rows" (index.js quotes one source's 65.2M rows).
+    const ent = [...text.matchAll(/([\d.]+)\s*M\s+entities/g)].map((m) => m[1]);
+    // "31 registries", "31 fused registries", and the badge's "sources-31 fused" (digit after word).
+    const src = [
+      ...[...text.matchAll(/(\d+)\s+(?:[A-Za-z/-]+\s+){0,2}(?:registries|sources)\b/g)].map((m) => m[1]),
+      ...[...text.matchAll(/\b(?:registries|sources)\D{0,4}(\d+)/g)].map((m) => m[1]),
+    ];
+    if (ent.length) entity[where] = [...new Set(ent)];
+    if (src.length) source[where] = [...new Set(src)];
+  }
+
+  // A slot that stopped stating a figure is itself a drift (deleted instead of updated).
+  for (const where of Object.keys(files)) {
+    assert.ok(entity[where]?.length, `${where} states no "<n>M entities" figure — expected the corpus total`);
+    assert.ok(source[where]?.length, `${where} states no "<n> registries/sources" figure — expected the source count`);
+  }
+
+  const entitySet = [...new Set(Object.values(entity).flat())];
+  const sourceSet = [...new Set(Object.values(source).flat())];
+  assert.equal(
+    entitySet.length,
+    1,
+    `entity total drifted across manifests — found ${JSON.stringify(entity)}. A data-refresh slot was missed.`,
+  );
+  assert.equal(
+    sourceSet.length,
+    1,
+    `source/registry count drifted across manifests — found ${JSON.stringify(source)}. A data-refresh slot was missed.`,
+  );
+});
