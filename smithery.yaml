@@ -1,22 +1,27 @@
-# Smithery deployment config — https://smithery.ai
+# Smithery listing + local stdio run config for the WhiteIntel MCP server.
+# https://smithery.ai indexes/deploys MCP servers from a connected repo.
+#
+# NOTE ON THE INSTALL SOURCE: the command below installs from GitHub
+# (github:Hei33enberg/WhiteIntel-OS), not from npm. This is deliberate — it always
+# delivers the current server (21 tools); the npm package can lag. Once npm is
+# republished to the current version, `@whiteintel/mcp-server` is an equivalent source.
 startCommand:
   type: stdio
   configSchema:
     type: object
     properties:
-      whiteintelApiKey:
+      WHITEINTEL_API_KEY:
         type: string
-        description: "Optional wi_ API key (whiteintel.dev → Settings → API keys). Forwarded as a Bearer token to authenticate as your plan and lift free-tier limits. Omit to use the anonymous free tier."
-      whiteintelApiBase:
-        type: string
-        description: "API origin (defaults to https://whiteintel.dev; SSRF-guarded)."
+        title: WhiteIntel API key (optional)
+        description: >-
+          Optional wi_ API key (whiteintel.dev -> Settings -> API keys). Lifts the
+          anonymous free-tier limits to your plan. Omit to use the free tier.
     required: []
-  commandFunction: |-
+  commandFunction: |
     (config) => ({
-      command: 'node',
-      args: ['index.js'],
-      env: {
-        ...(config.whiteintelApiKey ? { WHITEINTEL_API_KEY: config.whiteintelApiKey } : {}),
-        ...(config.whiteintelApiBase ? { WHITEINTEL_API_BASE: config.whiteintelApiBase } : {})
-      }
+      command: "npx",
+      args: ["-y", "github:Hei33enberg/WhiteIntel-OS"],
+      env: config.WHITEINTEL_API_KEY
+        ? { WHITEINTEL_API_KEY: config.WHITEINTEL_API_KEY }
+        : {}
     })
