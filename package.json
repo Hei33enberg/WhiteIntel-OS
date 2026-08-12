@@ -18,7 +18,7 @@
   },
   "scripts": {
     "start": "node index.js",
-    "test": "node --test test/lib.test.js",
+    "test": "node --test test/lib.test.js test/manifests.test.js",
     "smoke": "node test/smoke.mjs"
   },
   "keywords": [
