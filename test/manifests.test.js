@@ -74,3 +74,41 @@ test('every "N tools" claim matches the tool count smoke.mjs guards', () => {
     }
   }
 });
+
+test("resolve's advertised scheme list matches lookup_by_identifier's enum", () => {
+  // Two tools declare the SAME set of identifier schemes in two shapes:
+  //   · lookup_by_identifier carries them as a machine-readable JSON `enum` (source of truth).
+  //   · resolve only names them in prose, inside "(scheme:value — …)".
+  // This pair has drifted in BOTH directions before (nip advertised after removal → zero rows;
+  // br-cnpj, the scheme reaching the largest source, omitted). The wire smoke test cannot catch
+  // it because both strings stay non-empty and well-formed; only content parity catches it.
+  const src = read("../index.js");
+
+  const lbi = src.slice(
+    src.indexOf('name: "lookup_by_identifier"'),
+    src.indexOf('name: "get_sanctions"'),
+  );
+  const enumMatch = lbi.match(/enum:\s*\[([^\]]*)\]/);
+  assert.ok(enumMatch, "could not find lookup_by_identifier's scheme enum in index.js");
+  const enumSchemes = (enumMatch[1].match(/"([^"]+)"/g) ?? []).map((s) => s.replace(/"/g, ""));
+  assert.ok(enumSchemes.length > 0, "lookup_by_identifier enum parsed as empty");
+
+  const resolve = src.slice(
+    src.indexOf('name: "resolve"'),
+    src.indexOf('name: "get_pricing"'),
+  );
+  const proseMatch = resolve.match(/scheme:value\s*[—-]\s*([^)]*)\)/);
+  assert.ok(proseMatch, "could not find resolve's '(scheme:value — …)' list in index.js");
+  const proseSchemes = proseMatch[1].split(/,\s*/).map((s) => s.trim()).filter(Boolean);
+  assert.ok(proseSchemes.length > 0, "resolve prose scheme list parsed as empty");
+
+  const enumSet = new Set(enumSchemes);
+  const proseSet = new Set(proseSchemes);
+  const onlyEnum = [...enumSet].filter((s) => !proseSet.has(s));
+  const onlyProse = [...proseSet].filter((s) => !enumSet.has(s));
+  assert.deepEqual(
+    { onlyEnum, onlyProse },
+    { onlyEnum: [], onlyProse: [] },
+    `resolve's scheme prose and lookup_by_identifier's enum disagree — onlyEnum=${JSON.stringify(onlyEnum)} onlyProse=${JSON.stringify(onlyProse)}. Align the resolve description and the enum in index.js.`,
+  );
+});
