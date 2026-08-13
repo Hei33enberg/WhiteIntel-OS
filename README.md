@@ -15,7 +15,7 @@ The corporate-ownership & sanctions intelligence layer for AI agents — built f
 [![License: MIT](https://img.shields.io/badge/License-MIT-2f7d4f.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-7c3aed.svg)](https://modelcontextprotocol.io)
 [![Tools](https://img.shields.io/badge/tools-21%20live-00ff7f)](https://whiteintel.dev/developers)
-[![Corpus](https://img.shields.io/badge/corpus-118.0M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
+[![Corpus](https://img.shields.io/badge/corpus-123.4M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
 [![Sources](https://img.shields.io/badge/sources-31%20fused-2f7d4f)](https://whiteintel.dev/sources)
 [![whiteintel.dev](https://img.shields.io/badge/site-whiteintel.dev-5af082)](https://whiteintel.dev)
 
@@ -118,7 +118,7 @@ Check **`get_pricing`** first — it returns the full price list plus this flow 
 
 ## The corpus
 
-**~118.0M entities across 31 fused registries** — every claim cited, every edge traced.
+**~123.4M entities across 31 fused registries** — every claim cited, every edge traced.
 
 *Measured 2026-08-11 from [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats) (`entities` = 116,163,032, itself a planner estimate). That endpoint rebuilds its source map by counting registries, so it is always the authority — and a new source shows up there without anyone editing this file.*
 
@@ -166,7 +166,7 @@ Existing corporate-ownership tools were built for compliance analysts clicking w
 
 ## Data & honesty
 
-- **Live corpus:** ~118.0M entities across 31 fused registries (measured 2026-08-11 16:45Z). Live counts, always authoritative over this file: [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats).
+- **Live corpus:** ~123.4M entities across 31 fused registries (measured 2026-08-13 14:15Z). Live counts, always authoritative over this file: [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats).
 - **Sources are not uniformly deep.** A registry in the list means we hold *what that registry publishes* — which for some jurisdictions is the officer layer, not ownership. Cyprus is the clearest case (see the scope note above). Never read presence in the source table as ownership coverage.
 - An absent edge means "not yet observed", not "does not exist".
 - Investigative **decision-support**, not a legal determination of beneficial ownership.
