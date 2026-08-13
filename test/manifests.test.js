@@ -123,11 +123,18 @@ test("every corpus figure (entity total + source count) is identical across all 
   // the other two figures. No file is a source of truth for these, so the invariant is pure internal
   // consistency: every occurrence must equal every other. Network-free — the live count is
   // authoritative over the repo, but the repo must at least agree with itself.
+  // llms-install.md was NOT in this list until 2026-08-13, and that omission is exactly why it
+  // was the one file still advertising ~118.0M / ~20.6M after every other slot had been refreshed.
+  // It is the install page agents and marketplaces read, so it is not a lesser surface — it was
+  // just an unguarded one. A guard with a hole is worse than no guard: this test passed 8/8 green
+  // while a shipped file disagreed with the other four. Any NEW agent-facing file that states a
+  // corpus figure belongs here on the day it is created.
   const files = {
     "server.json": read("../server.json"),
     "claude-plugin.json": read("../claude-plugin.json"),
     "README.md": read("../README.md"),
     "index.js": read("../index.js"),
+    "llms-install.md": read("../llms-install.md"),
   };
 
   const entity = {}; // file -> distinct "<n>M entities" figures found
