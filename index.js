@@ -7,10 +7,10 @@
  * search the corpus of companies and people, and trace ownership chains to the
  * ultimate beneficial owner.
  *
- * Data: ~123.4M entities fused across 31 public/semi-public registries — OpenOwnership,
+ * Data: ~130.7M entities fused across 31 public/semi-public registries — OpenOwnership,
  * GLEIF, ICIJ Offshore Leaks, SEC EDGAR, Cyprus DRCOR, sanctions/PEP lists and more —
  * cross-source resolved onto one cited identity spine, plus live UK Companies House
- * lookups. Entity count read from /api/public/stats on 2026-08-13 (123,445,288, itself a
+ * lookups. Entity count read from /api/public/stats on 2026-08-16 (130,735,728, itself a
  * planner estimate); the live figure is always at whiteintel.dev/api/public/stats, whose
  * source map is rebuilt by counting registries — new sources appear there on their own.
  *
@@ -184,13 +184,15 @@ const PRICING = {
     investigator: {
       price: "€149/seat·mo",
       includes:
-        "Unlimited full-depth ownership graph + unlimited Premium dossiers, risk scores + watchlists, metered API/MCP credit allowance.",
+        "Unlimited full-depth ownership graph + unlimited Premium dossiers, risk scores + watchlists, metered API/MCP credit allowance. Dossier PDF/JSON exports are capped at 100 per month — the dossiers themselves stay viewable at full depth without limit, and one-off €39/€99 dossier purchases are bought artifacts that never count against this cap.",
     },
     business: {
       price: "€1,900/mo",
       includes:
-        "Everything in Investigator with 3 seats, unlimited Premium dossiers, monitoring + webhooks, larger API/MCP credit allowance.",
+        "Everything in Investigator with 3 seats, unlimited Premium dossiers, monitoring + webhooks, larger API/MCP credit allowance. Dossier PDF/JSON exports are capped at 500 per month — the dossiers themselves stay viewable at full depth without limit, and one-off €39/€99 dossier purchases are bought artifacts that never count against this cap.",
     },
+    export_quota:
+      "Subscriber dossier exports (PDF/JSON) are metered per month: Investigator 100/mo, Business 500/mo. Exceeding the monthly allowance returns HTTP 429 on the export call (retry after the cap resets on the billing month). One-off €39/€99 dossier purchases are bought artifacts and are NEVER counted against this quota.",
     note:
       "Subscriptions are bought at whiteintel.dev/pricing (account required); the wi_ API key from Settings then lifts this MCP server's limits via WHITEINTEL_API_KEY.",
   },
@@ -440,7 +442,7 @@ const TOOLS = [
       //   · it advertised `nip`, which LINEAR-5147 removed everywhere else — no Polish NIP is
       //     stamped on entities.identifier, so `nip:…` resolved to zero rows, silently.
       //   · it omitted `br-cnpj`, which IS supported and reaches our LARGEST source (Brazil RFB,
-      //     65.2M rows measured 2026-08-11) — the one scheme most worth telling an agent about.
+      //     ~78M rows measured 2026-08-16) — the one scheme most worth telling an agent about.
       "Batch-resolve a list of company names or strong identifiers (scheme:value — lei, siren, gb-coh, uen, br-cnpj, sec, ofac, eu, un, uk, krs) to canonical WhiteIntel entity ids in ONE call. Each result carries a confidence: 'exact' (identifier match) or 'name' (top name hit); an unmatched row comes back as `{ match: null, confidence: null }`, so check for it rather than assuming positional success. Use this to enrich a whole list — suppliers, counterparties, a portfolio — without one lookup per row. Then feed the ids into get_dossier / trace_ownership_path / get_sanctions. Up to 25 items anonymously (a 26th returns HTTP 400 with the limit spelled out), 100 with WHITEINTEL_API_KEY. " +
       "TREAT `confidence: 'name'` AS A CANDIDATE, NOT A RESOLUTION. It is the top lexical hit and nothing more — measured 2026-08-11, the query 'Tesco' resolved to a FRENCH company literally named TESCO (fr-siren:454067281), not Tesco PLC, while 'gb-coh:00445790' resolved 'exact' to TESCO PLC. Confirm a 'name' match's jurisdiction and identifier before you attach it to a real counterparty; pass an identifier whenever you hold one.",
     inputSchema: {
@@ -590,7 +592,7 @@ const server = new Server(
   // vs 0.7.1. Verify after every bump by piping an initialize request into the delivery command
   // and reading serverInfo.version, which is how 0.7.4 was confirmed:
   //   npx -y github:Hei33enberg/WhiteIntel-OS
-  { name: "whiteintel-mcp-server", version: "0.7.5" },
+  { name: "whiteintel-mcp-server", version: "0.7.6" },
   { capabilities: { tools: {} } },
 );
 

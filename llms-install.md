@@ -1,7 +1,7 @@
 # Installing the WhiteIntel MCP server (for agents & marketplaces)
 
 WhiteIntel is a **free, agent-native** corporate-ownership & sanctions intelligence graph:
-~123.4M entities and ~22.3M ownership/control edges fused from **31 registries** into one
+~130.7M entities and ~22.3M ownership/control edges fused from **31 registries** into one
 source-cited graph, with sanctions/PEP screening, UBO chain tracing, and **in-flow dossier
 purchase** (an agent can hand a permanent payment link to a human). **21 tools.** No account
 required — anonymous free tier; an optional `WHITEINTEL_API_KEY` lifts limits.
