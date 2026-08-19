@@ -1,11 +1,11 @@
 {
   "mcpServers": {
     "whiteintel": {
+      "url": "https://whiteintel.dev/api/mcp"
+    },
+    "whiteintel-local": {
       "command": "npx",
-      "args": ["-y", "github:Hei33enberg/WhiteIntel-OS"],
-      "env": {
-        "WHITEINTEL_API_KEY": "wi_YOUR_KEY_OPTIONAL"
-      }
+      "args": ["-y", "@whiteintel/mcp-server@0.7.10"]
     }
   }
 }

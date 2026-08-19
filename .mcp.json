@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "whiteintel": {
+      "url": "https://whiteintel.dev/api/mcp"
+    }
+  }
+}

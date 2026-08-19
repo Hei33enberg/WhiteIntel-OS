@@ -6,6 +6,9 @@
 
 **They trace names. We trace who really owns them.**
 
+<!-- Cursor one-click install (anonymous remote endpoint, no key) -->
+<a href="https://cursor.com/install-mcp?name=whiteintel&config=eyJ1cmwiOiJodHRwczovL3doaXRlaW50ZWwuZGV2L2FwaS9tY3AifQ%3D%3D"><picture><source media="(prefers-color-scheme: dark)" srcset="https://cursor.com/deeplink/mcp-install-dark.png"><img alt="Add whiteintel MCP server to Cursor" src="https://cursor.com/deeplink/mcp-install-light.png"></picture></a>
+
 The corporate-ownership & sanctions intelligence layer for AI agents — built for the agentic era. WhiteIntel turns public-registry and offshore-leak data into MCP-native intelligence primitives — **entity search, semantic discovery, ownership-path traversal, sanctions screening, offshore-exposure detection, and fully cited dossiers** — so any AI agent can investigate a company, trace its ultimate beneficial owner, and flag risk in one conversation. Your agent isn't querying a database — it's conducting an investigation.
 
 **[Read the Methodology →](https://whiteintel.dev/methodology)**
