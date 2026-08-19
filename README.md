@@ -9,6 +9,8 @@
 <!-- Cursor one-click install (anonymous remote endpoint, no key) -->
 <a href="https://cursor.com/install-mcp?name=whiteintel&config=eyJ1cmwiOiJodHRwczovL3doaXRlaW50ZWwuZGV2L2FwaS9tY3AifQ%3D%3D"><picture><source media="(prefers-color-scheme: dark)" srcset="https://cursor.com/deeplink/mcp-install-dark.png"><img alt="Add whiteintel MCP server to Cursor" src="https://cursor.com/deeplink/mcp-install-light.png"></picture></a>
 
+[![Add to Replit](https://replit.com/badge?caption=Add%20WhiteIntel%20to%20Replit)](https://replit.com/integrations?mcp=eyJkaXNwbGF5TmFtZSI6IldoaXRlSW50ZWwiLCJiYXNlVXJsIjoiaHR0cHM6Ly93aGl0ZWludGVsLmRldi9hcGkvbWNwIn0%3D)
+
 The corporate-ownership & sanctions intelligence layer for AI agents — built for the agentic era. WhiteIntel turns public-registry and offshore-leak data into MCP-native intelligence primitives — **entity search, semantic discovery, ownership-path traversal, sanctions screening, offshore-exposure detection, and fully cited dossiers** — so any AI agent can investigate a company, trace its ultimate beneficial owner, and flag risk in one conversation. Your agent isn't querying a database — it's conducting an investigation.
 
 **[Read the Methodology →](https://whiteintel.dev/methodology)**
@@ -17,7 +19,7 @@ The corporate-ownership & sanctions intelligence layer for AI agents — built f
 [![CI](https://github.com/Hei33enberg/whiteintel-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/Hei33enberg/whiteintel-mcp-server/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-2f7d4f.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-7c3aed.svg)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-21%20live-00ff7f)](https://whiteintel.dev/developers)
+[![Tools](https://img.shields.io/badge/tools-23%20live-00ff7f)](https://whiteintel.dev/developers)
 [![Corpus](https://img.shields.io/badge/corpus-130.7M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
 [![Sources](https://img.shields.io/badge/sources-31%20fused-2f7d4f)](https://whiteintel.dev/sources)
 [![whiteintel.dev](https://img.shields.io/badge/site-whiteintel.dev-5af082)](https://whiteintel.dev)
@@ -46,6 +48,8 @@ npx -y @whiteintel/mcp-server
 | `lookup_by_identifier` | Resolve by strong id — LEI, OFAC/EU/UN/UK sanctions id, UEN, SEC CIK, KRS, GB-COH, SIREN, Brazil RFB CNPJ | 📋 Lookup |
 | `get_entity` | Full record for one entity + its direct relationships | 📋 Lookup |
 | `resolve` | Batch-resolve names or `scheme:value` ids → canonical entity ids + confidence | 📋 Lookup |
+| `list_jurisdictions` | Coverage map per country — tier, scope and record depth we hold | 🗺️ Coverage |
+| `list_asset_coverage` | Coverage map per asset class — aircraft, vessels, real estate | 🗺️ Coverage |
 | `get_dossier` | Structured, fully-cited dossier: identity, ownership/UBO chain, risk, provenance | 📊 Intelligence |
 | `trace_ownership_path` | Walk ownership upward to the ultimate beneficial owner | 📊 Intelligence |
 | `graph_neighbourhood` | Every edge within N hops of an entity, both directions — hard-capped, says when the view is partial | 🕸️ Graph |
@@ -60,7 +64,7 @@ npx -y @whiteintel/mcp-server
 | `get_payment_link` | Permanent, reusable Stripe payment links — the artefact you hand to a human | 💳 Commerce |
 | `claim_dossier` | Redeem a paid session for a 90-day access token (idempotent) | 💳 Commerce |
 
-**21 callable tools** — 4 Discovery + 4 Lookup + 4 Intelligence + 2 Graph + 2 Risk + 3 Commerce + 1 Feed + 1 Pricing. All read-only except `buy_dossier` (opens Stripe — money moves only when a human completes it) and `claim_dossier` (redeems an already-paid session). Ids flow between tools: search → get_dossier → trace_ownership_path → get_sanctions.
+**23 callable tools** — 4 Discovery + 4 Lookup + 2 Coverage + 4 Intelligence + 2 Graph + 2 Risk + 3 Commerce + 1 Feed + 1 Pricing. All read-only except `buy_dossier` (opens Stripe — money moves only when a human completes it) and `claim_dossier` (redeems an already-paid session). Ids flow between tools: search → get_dossier → trace_ownership_path → get_sanctions.
 
 ## Quickstart (60 seconds)
 

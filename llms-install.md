@@ -65,3 +65,22 @@ After install, list tools (should be 21) and try:
 - OpenAPI (no auth): https://whiteintel.dev/api/public/openapi.json
 - Agent map: https://whiteintel.dev/llms.txt · https://whiteintel.dev/llms-full.txt
 - Repo: https://github.com/Hei33enberg/WhiteIntel-OS
+
+## Vibe-coding platforms (remote MCP, no API key)
+
+### Replit
+One click: https://replit.com/integrations?mcp=eyJkaXNwbGF5TmFtZSI6IldoaXRlSW50ZWwiLCJiYXNlVXJsIjoiaHR0cHM6Ly93aGl0ZWludGVsLmRldi9hcGkvbWNwIn0%3D
+Or manually: Project Editor → Settings → Integrations → MCP Servers → Add server.
+  Name: WhiteIntel
+  URL:  https://whiteintel.dev/api/mcp
+  Auth: none (anonymous free tier)
+
+### Vercel v0
+In the prompt form press "+" → MCPs → Add MCP → Custom.
+  Name: WhiteIntel
+  URL:  https://whiteintel.dev/api/mcp
+  Auth: No Auth
+
+### Lovable / any client that accepts a custom MCP URL
+  Name: WhiteIntel
+  URL:  https://whiteintel.dev/api/mcp   (streamable-HTTP, anonymous)
