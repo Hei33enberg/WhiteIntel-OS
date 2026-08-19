@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "dev.whiteintel/whiteintel",
   "title": "WhiteIntel — Ownership Intelligence",
-  "description": "Free, agent-native alternative to Sayari/OpenCorporates: UBO, sanctions & ownership graph. 23 tools over ~130.7M entities fused from 31 registries.",
+  "description": "UBO, sanctions & ownership graph. 23 tools, 130.7M entities, 31 registries.",
   "version": "0.7.9",
   "websiteUrl": "https://whiteintel.dev",
   "repository": {
