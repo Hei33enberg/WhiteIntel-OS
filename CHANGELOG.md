@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.9 — 2026-08-19 — assets get a coverage map too (22 → 23)
+
+Adds `list_asset_coverage`: the presence-first coverage map for physical assets — who owns the plane,
+the yacht, the property — the companion to `list_jurisdictions`. Each row (aircraft / ship_yacht /
+real_estate / community) carries the same tiers plus `links_to_owner`, the honest flag that separates a
+registry which names the OWNER from one that publishes only a tail/hull/title mark (an offshore aircraft
+register names the SPV, not the human). Backed by the new `GET /api/public/asset-coverage`; vendor and
+price stay server-side. `deep` is claimed only where we actually ingest an owner-bearing bulk source
+(FAA aircraft, offshore-aircraft registries, HM Land Registry OCOD/CCOD) — everything else is honestly
+`indexed` (leaks/sanctions), `on_demand` (procured on paid request) or `community` (SnitchBoard).
+
 ## 0.7.8 — 2026-08-19 — the coverage map is a tool now (21 → 22), and the version drift is closed
 
 Adds `list_jurisdictions`: the presence-first coverage map as a tool, so an agent reads HOW a country

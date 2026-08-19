@@ -264,6 +264,13 @@ const TOOLS = [
     handler: () => apiGet(`/api/public/coverage`),
   },
   {
+    name: "list_asset_coverage",
+    description:
+      "The WhiteIntel ASSET-ownership coverage map — who owns the plane / yacht / property, and HOW we hold that link. The companion to list_jurisdictions for physical assets. Each row is one asset class × area with a `tier`: `deep` = we ingest a bulk source that ties the asset to an OWNER (e.g. FAA US aircraft, HM Land Registry UK property) · `indexed` = held only via leaks/sanctions (e.g. a yacht reached through an offshore SPV in the ICIJ leaks) · `on_demand` = the source is closed/paid, so the record is procured from source on a paid request · `community` = SnitchBoard crowd tips. Also `links_to_owner` — CRITICAL, because many asset registries publish only the registration mark and NOT the owner: an offshore aircraft register (Isle of Man, Bermuda) names the SPV/owner-trust, not the human behind it, so `deep` there is still the SPV layer, and piercing to the beneficial owner is an `on_demand` bizjet-ownership buy. Read this before claiming we do or do not hold ownership for an aircraft/vessel/real-estate entity. No vendor or price is exposed. Returns { assets, count, classes, tiers, note }.",
+    inputSchema: { type: "object", properties: {} },
+    handler: () => apiGet(`/api/public/asset-coverage`),
+  },
+  {
     name: "get_entity",
     description:
       "Full record for one entity by id: type (company/person), identifiers, jurisdiction, risk level, summary and its direct relationships with provenance. Get the id from search_entities or lookup_company.",
@@ -599,7 +606,7 @@ const server = new Server(
   // vs 0.7.1. Verify after every bump by piping an initialize request into the delivery command
   // and reading serverInfo.version, which is how 0.7.4 was confirmed:
   //   npx -y github:Hei33enberg/WhiteIntel-OS
-  { name: "whiteintel-mcp-server", version: "0.7.8" },
+  { name: "whiteintel-mcp-server", version: "0.7.9" },
   { capabilities: { tools: {} } },
 );
 
