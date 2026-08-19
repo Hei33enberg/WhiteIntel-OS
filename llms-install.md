@@ -3,7 +3,7 @@
 WhiteIntel is a **free, agent-native** corporate-ownership & sanctions intelligence graph:
 ~130.7M entities and ~22.3M ownership/control edges fused from **31 registries** into one
 source-cited graph, with sanctions/PEP screening, UBO chain tracing, and **in-flow dossier
-purchase** (an agent can hand a permanent payment link to a human). **21 tools.** No account
+purchase** (an agent can hand a permanent payment link to a human). **22 tools.** No account
 required — anonymous free tier; an optional `WHITEINTEL_API_KEY` lifts limits.
 
 ## Recommended install — local (stdio), always current
@@ -19,7 +19,7 @@ required — anonymous free tier; an optional `WHITEINTEL_API_KEY` lifts limits.
 }
 ```
 
-The GitHub source always delivers the current server (21 tools). The npm package
+The GitHub source always delivers the current server (22 tools). The npm package
 `@whiteintel/mcp-server` is an alternative source but can lag; prefer the GitHub install until
 the npm release is current.
 
@@ -45,7 +45,7 @@ For chatbots/clients that cannot spawn a subprocess, POST JSON-RPC 2.0 to:
 https://whiteintel.dev/api/mcp
 ```
 
-## The 21 tools
+## The 22 tools
 
 - **Discovery:** `search_entities`, `semantic_search`, `find_similar`, `search_companies`
 - **Lookup:** `lookup_company`, `lookup_by_identifier`, `get_entity`, `resolve`

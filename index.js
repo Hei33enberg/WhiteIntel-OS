@@ -257,6 +257,13 @@ const TOOLS = [
     handler: (a) => apiGet(`/api/public/entity/search${qs({ q: a.q, limit: a.limit ?? 20, type: a.type, juris: a.juris, risk: a.risk })}`),
   },
   {
+    name: "list_jurisdictions",
+    description:
+      "The WhiteIntel coverage map — every jurisdiction we hold and HOW we hold it. Read this before telling anyone a country is or is not covered, because 'covered' means three different things. Each row carries `tier`: `deep` = we loaded the country's WHOLE national registry, so a name/number search resolves ANY company registered there; `indexed` = we hold only the leak / sanctions / GLEIF subset, so the entities that surfaced in a leak or on a sanctions list are searchable but the rest of that country's companies are NOT in the corpus; `on_demand` = the registry is closed or paid, so the specific record is procured from source when a dossier is purchased. Also `scope` (full = whole registry · subset = fragment), `depth` (`ownership` = owners/beneficial owners on the record · `officers` = directors · `identity` = name/number/address/status, owners procured on request) and `registry` (our loader, for deep tiers). So a `deep`+`full`+`ownership` row (e.g. gb, lv, ua, br) means you can trace owners for any company there; a `subset` row (e.g. cn, kr, most secrecy havens) means an empty search is 'not in the held subset', NOT 'does not exist' — the full record is bought on request. No per-record price or vendor is exposed. Returns { jurisdictions, count, tiers, note }.",
+    inputSchema: { type: "object", properties: {} },
+    handler: () => apiGet(`/api/public/coverage`),
+  },
+  {
     name: "get_entity",
     description:
       "Full record for one entity by id: type (company/person), identifiers, jurisdiction, risk level, summary and its direct relationships with provenance. Get the id from search_entities or lookup_company.",
@@ -592,7 +599,7 @@ const server = new Server(
   // vs 0.7.1. Verify after every bump by piping an initialize request into the delivery command
   // and reading serverInfo.version, which is how 0.7.4 was confirmed:
   //   npx -y github:Hei33enberg/WhiteIntel-OS
-  { name: "whiteintel-mcp-server", version: "0.7.6" },
+  { name: "whiteintel-mcp-server", version: "0.7.8" },
   { capabilities: { tools: {} } },
 );
 

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.7.8 — 2026-08-19 — the coverage map is a tool now (21 → 22), and the version drift is closed
+
+Adds `list_jurisdictions`: the presence-first coverage map as a tool, so an agent reads HOW a country
+is held before claiming it is or is not covered — `deep` (the whole national registry is loaded, so
+every company there is searchable), `indexed` (only the leak/sanctions/GLEIF subset), or `on_demand`
+(the registry is closed/paid, so the specific record is procured from source when a dossier is
+purchased). Backed by the new `GET /api/public/coverage`; the per-record vendor and price are never
+exposed on that surface. This is the agent-facing twin of the `/jurisdictions/{code}` pages shipped
+the same day.
+
+Also closes a version drift the manifest guard had been failing on: `index.js` and
+`claude-plugin.json` sat at 0.7.6 while `package.json`/`server.json` were 0.7.7. All six version slots
+are now 0.7.8, the tool count is 22 across every manifest, and `server.json` — which stated neither a
+tool count nor a corpus figure — now carries both. `npm test` is 8/8 green and the wire smoke confirms
+22 tools at 0.7.8.
+
 ## 0.7.4 — 2026-08-11 — the tool a human can actually finish (20 → 21), and nine descriptions that were overstating
 
 Two things shipped here. One is a missing tool. The other is the harder half: this package has

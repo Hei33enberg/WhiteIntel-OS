@@ -31,7 +31,7 @@ The corporate-ownership & sanctions intelligence layer for AI agents — built f
 npx -y @whiteintel/mcp-server
 ```
 
-…starts an MCP server with **21 tools** that give any AI agent — Claude Desktop, Cursor, Cline, Windsurf, or your own runtime — **full corporate-ownership intelligence**: search by name or meaning, trace ownership chains to the UBO, screen sanctions across OFAC/EU/UN/UK, detect offshore layering, pull fully cited dossiers with financials and asset layers, and even purchase deeper intelligence through agent-initiated Stripe checkout. Every claim cited to its source, every edge traced to a registry record.
+…starts an MCP server with **22 tools** that give any AI agent — Claude Desktop, Cursor, Cline, Windsurf, or your own runtime — **full corporate-ownership intelligence**: search by name or meaning, trace ownership chains to the UBO, screen sanctions across OFAC/EU/UN/UK, detect offshore layering, pull fully cited dossiers with financials and asset layers, and even purchase deeper intelligence through agent-initiated Stripe checkout. Every claim cited to its source, every edge traced to a registry record.
 
 | Tool | What it does | Category |
 |---|---|---|
@@ -198,7 +198,7 @@ WhiteIntel is built and directed by [@Hei33enberg](https://github.com/Hei33enber
 ## Get on the graph
 
 ```bash
-npx -y @whiteintel/mcp-server     # 21 tools, any MCP agent
+npx -y @whiteintel/mcp-server     # 22 tools, any MCP agent
 ```
 
 - **Install** — drop the server into Claude Desktop, Cursor, Cline, Windsurf, or your own runtime (see [Quickstart](#quickstart-60-seconds)).

@@ -16,6 +16,7 @@ const EXPECTED_TOOLS = [
   "lookup_company",
   "search_companies",
   "search_entities",
+  "list_jurisdictions",
   "get_entity",
   "get_dossier",
   "trace_ownership_path",
