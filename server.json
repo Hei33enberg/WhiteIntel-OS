@@ -1,35 +1,43 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
-  "name": "dev.whiteintel/mcp-server",
-  "description": "Corporate & offshore ownership intelligence for AI agents — search ~130.7M entities across 31 registries, screen sanctions (OFAC/EU/UN/UK), trace ownership chains to the ultimate beneficial owner, walk the ownership graph around an entity or between two entities, and buy fully-cited dossiers in-flow (including permanent payment links an agent can hand to a human). 21 tools. Freemium: anonymous free tier; wi_ API key lifts limits.",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "dev.whiteintel/whiteintel",
+  "title": "WhiteIntel — Ownership Intelligence",
+  "description": "Free, agent-native alternative to Sayari/OpenCorporates: UBO, sanctions & ownership graph.",
+  "version": "0.7.7",
+  "websiteUrl": "https://whiteintel.dev",
   "repository": {
-    "url": "https://github.com/Hei33enberg/whiteintel-mcp-server",
+    "url": "https://github.com/Hei33enberg/WhiteIntel-OS",
     "source": "github"
-  },
-  "version_detail": {
-    "version": "0.7.6"
   },
   "packages": [
     {
-      "registry_name": "npm",
-      "name": "@whiteintel/mcp-server",
-      "version": "0.7.6",
-      "runtime_hint": "npx",
-      "transport": { "type": "stdio" },
-      "environment_variables": [
+      "registryType": "npm",
+      "identifier": "@whiteintel/mcp-server",
+      "version": "0.7.7",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
         {
           "name": "WHITEINTEL_API_KEY",
-          "description": "Optional wi_ API key (whiteintel.dev → Settings → API keys). Lifts free-tier limits to your plan.",
-          "is_required": false,
-          "is_secret": true
+          "description": "Optional wi_ API key (whiteintel.dev, Settings, API keys). Lifts free-tier limits to your plan.",
+          "isRequired": false,
+          "isSecret": true
         },
         {
           "name": "WHITEINTEL_API_BASE",
           "description": "API origin (SSRF-guarded to whiteintel.dev hosts).",
-          "is_required": false,
+          "isRequired": false,
           "default": "https://whiteintel.dev"
         }
       ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://whiteintel.dev/api/mcp"
     }
   ]
 }

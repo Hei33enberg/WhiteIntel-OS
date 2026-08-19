@@ -27,7 +27,7 @@ test("version is identical across every manifest slot", () => {
     "package-lock.json .version": lock.version,
     'package-lock.json .packages[""].version': lock.packages?.[""]?.version,
     "claude-plugin.json .version": plugin.version,
-    "server.json .version_detail.version": server.version_detail?.version,
+    "server.json .version": server.version,
     "server.json .packages[0].version": server.packages?.[0]?.version,
   };
 
