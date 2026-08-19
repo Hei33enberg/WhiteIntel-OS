@@ -172,3 +172,27 @@ test("every corpus figure (entity total + source count) is identical across all 
     `source/registry count drifted across manifests — found ${JSON.stringify(source)}. A data-refresh slot was missed.`,
   );
 });
+
+test("every tool carries an annotation with a title", () => {
+  // The Claude Connectors Directory rejects a server whose tools lack `title` + behavioural hints,
+  // and every client renders the title in its permission prompt. Measured 2026-08-19: tools/list
+  // shipped with NO annotations block at all. This guard fails the moment a new tool is added to
+  // TOOLS without a matching entry in ANNOTATIONS — the drift that would otherwise ship silently.
+  const src = read("../index.js");
+
+  const toolNames = [...src.matchAll(/^\s{2}\{\s*\n\s{4}name:\s*"([a-z_]+)"/gm)].map((m) => m[1]);
+  assert.ok(toolNames.length > 0, "could not parse tool names out of the TOOLS array");
+
+  const annBlock = src.slice(src.indexOf("const ANNOTATIONS = {"), src.indexOf("const TOOL_BY_NAME"));
+  assert.ok(annBlock, "could not find the ANNOTATIONS map in index.js");
+  const annotated = new Set([...annBlock.matchAll(/^\s{2}([a-z_]+):\s*\{/gm)].map((m) => m[1]));
+
+  const missing = toolNames.filter((n) => !annotated.has(n));
+  assert.deepEqual(missing, [], `tools missing an ANNOTATIONS entry: ${missing.join(", ")}`);
+
+  // Each annotation must carry a human title — the field clients actually display.
+  const untitled = [...annBlock.matchAll(/^\s{2}([a-z_]+):\s*\{([^}]*)\}/gm)]
+    .filter(([, , body]) => !/title:\s*"/.test(body))
+    .map(([, name]) => name);
+  assert.deepEqual(untitled, [], `annotations without a title: ${untitled.join(", ")}`);
+});

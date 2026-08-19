@@ -3,7 +3,7 @@
   "name": "dev.whiteintel/whiteintel",
   "title": "WhiteIntel — Ownership Intelligence",
   "description": "UBO, sanctions & ownership graph. 23 tools, 130.7M entities, 31 registries.",
-  "version": "0.7.9",
+  "version": "0.7.10",
   "websiteUrl": "https://whiteintel.dev",
   "repository": {
     "url": "https://github.com/Hei33enberg/WhiteIntel-OS",
@@ -13,7 +13,7 @@
     {
       "registryType": "npm",
       "identifier": "@whiteintel/mcp-server",
-      "version": "0.7.9",
+      "version": "0.7.10",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"

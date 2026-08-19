@@ -598,6 +598,48 @@ const TOOLS = [
   },
 ];
 
+// ── tool annotations (MCP spec) ───────────────────────────────────────────────
+// A human `title` plus behavioural hints. Clients render the title in permission prompts and tool
+// pickers, and an agent uses readOnlyHint to decide what it may call without asking. Measured
+// 2026-08-19: tools/list carried name/description/inputSchema and NO annotations at all — which is
+// also a hard blocker for the Claude Connectors Directory review.
+//
+// Honest hints, not flattering ones:
+//   readOnlyHint   — true only when the call changes nothing anywhere. buy_dossier opens a Stripe
+//                    Checkout session and claim_dossier mints a 90-day access token: both create
+//                    state, so both are false.
+//   destructiveHint— false everywhere: nothing here deletes or overwrites anything.
+//   idempotentHint — true when repeating the call is a no-op (claim_dossier re-returns the same
+//                    grant; buy_dossier mints a NEW session each time, so it is not).
+//   openWorldHint  — true when the answer depends on the live corpus / an external service. Only
+//                    get_pricing is closed-world (a static price list compiled into the package).
+const READ = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true };
+const ANNOTATIONS = {
+  lookup_company: { title: "Look up a UK company", ...READ },
+  search_companies: { title: "Search UK company names", ...READ },
+  search_entities: { title: "Search the corpus (companies & people)", ...READ },
+  list_jurisdictions: { title: "Jurisdiction coverage map", ...READ },
+  list_asset_coverage: { title: "Asset-ownership coverage map", ...READ },
+  get_entity: { title: "Get an entity record", ...READ },
+  get_dossier: { title: "Build a cited dossier", ...READ },
+  trace_ownership_path: { title: "Trace ownership to the beneficial owner", ...READ },
+  graph_neighbourhood: { title: "Walk the ownership neighbourhood", ...READ },
+  graph_path: { title: "Find how two entities connect", ...READ },
+  lookup_by_identifier: { title: "Resolve a registry identifier", ...READ },
+  get_sanctions: { title: "Screen sanctions & risk signals", ...READ },
+  check_offshore_exposure: { title: "Check offshore exposure", ...READ },
+  get_company_details: { title: "UK filing & compliance detail", ...READ },
+  get_financials: { title: "UK filed financials", ...READ },
+  get_pulse: { title: "Recent corpus activity", ...READ },
+  resolve: { title: "Batch-resolve names & identifiers", ...READ },
+  semantic_search: { title: "Meaning-based entity search", ...READ },
+  find_similar: { title: "Find similar entities", ...READ },
+  get_pricing: { title: "Price list & how an agent buys", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  get_payment_link: { title: "Get permanent payment links", ...READ },
+  buy_dossier: { title: "Start a dossier purchase (opens Stripe Checkout)", readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+  claim_dossier: { title: "Redeem a paid session for an access token", readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+};
+
 const TOOL_BY_NAME = Object.fromEntries(TOOLS.map((t) => [t.name, t]));
 
 const server = new Server(
@@ -606,12 +648,17 @@ const server = new Server(
   // vs 0.7.1. Verify after every bump by piping an initialize request into the delivery command
   // and reading serverInfo.version, which is how 0.7.4 was confirmed:
   //   npx -y github:Hei33enberg/WhiteIntel-OS
-  { name: "whiteintel-mcp-server", version: "0.7.9" },
+  { name: "whiteintel-mcp-server", version: "0.7.10" },
   { capabilities: { tools: {} } },
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: TOOLS.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })),
+  tools: TOOLS.map(({ name, description, inputSchema }) => ({
+    name,
+    description,
+    inputSchema,
+    ...(ANNOTATIONS[name] ? { annotations: ANNOTATIONS[name] } : {}),
+  })),
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (req) => {
