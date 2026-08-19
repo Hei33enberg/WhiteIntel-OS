@@ -20,7 +20,7 @@ const VERSION = pkg.version;
 test("version is identical across every manifest slot", () => {
   // Source of truth is package.json. Every other slot must equal it exactly.
   const lock = readJson("../package-lock.json");
-  const plugin = readJson("../claude-plugin.json");
+  const plugin = readJson("../.claude-plugin/plugin.json");
   const server = readJson("../server.json");
 
   const slots = {
@@ -56,7 +56,7 @@ test('every "N tools" claim matches the tool count smoke.mjs guards', () => {
 
   // Files that advertise the count in prose. Each may state it more than once (README does).
   const sources = {
-    "claude-plugin.json": readJson("../claude-plugin.json").description,
+    "claude-plugin.json": readJson("../.claude-plugin/plugin.json").description,
     "server.json": readJson("../server.json").description,
     "README.md": read("../README.md"),
   };
@@ -131,7 +131,7 @@ test("every corpus figure (entity total + source count) is identical across all 
   // corpus figure belongs here on the day it is created.
   const files = {
     "server.json": read("../server.json"),
-    "claude-plugin.json": read("../claude-plugin.json"),
+    "claude-plugin.json": read("../.claude-plugin/plugin.json"),
     "README.md": read("../README.md"),
     "index.js": read("../index.js"),
     "llms-install.md": read("../llms-install.md"),

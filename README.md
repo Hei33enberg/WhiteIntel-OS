@@ -215,6 +215,16 @@ Issues, PRs, and tool ideas welcome. Start with the [CHANGELOG](./CHANGELOG.md) 
 
 Web: [whiteintel.dev](https://whiteintel.dev) · npm: [@whiteintel/mcp-server](https://www.npmjs.com/package/@whiteintel/mcp-server) · Releases: [GitHub](https://github.com/Hei33enberg/whiteintel-mcp-server/releases)
 
+## Privacy Policy
+
+https://whiteintel.dev/privacy
+
+The WhiteIntel MCP server runs locally and calls only `https://whiteintel.dev` (SSRF-guarded).
+It sends the query terms you pass to a tool and, if set, your `WHITEINTEL_API_KEY`. It does not
+read your files, your conversation history, or your environment beyond `WHITEINTEL_API_KEY`
+and `WHITEINTEL_API_BASE`. Query logs are retained for abuse prevention and are not sold or
+shared with third parties. Contact: hello@whiteintel.dev
+
 ## License
 
 [MIT](./LICENSE) © whiteintel.dev
