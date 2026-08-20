@@ -1,7 +1,7 @@
 {
   "name": "whiteintel",
   "version": "0.7.10",
-  "description": "Corporate and offshore ownership intelligence: UBO tracing, sanctions screening (OFAC/EU/UN/UK) and cited dossiers over 130.7M entities from 31 public registries.",
+  "description": "Corporate and offshore ownership intelligence: UBO tracing, sanctions screening (OFAC/EU/UN/UK) and cited dossiers over 150M entities from 39 public registries.",
   "author": { "name": "WhiteIntel", "email": "hello@whiteintel.dev" },
   "homepage": "https://whiteintel.dev",
   "repository": "https://github.com/Hei33enberg/WhiteIntel-OS",

@@ -1,6 +1,6 @@
 ---
 name: corporate-ownership-investigation
-description: Trace who ultimately owns or controls a company, screen it for sanctions, and report the result without overclaiming. Use when asked "who owns X", "who is behind X", "is X sanctioned", "is X connected to Y", "what does X own", or when doing KYC/AML/due-diligence, counterparty checks, supply-chain screening, or offshore/UBO research. Works over the free WhiteIntel corpus (~130.7M entities, 31 public registries) via MCP tools or plain HTTP.
+description: Trace who ultimately owns or controls a company, screen it for sanctions, and report the result without overclaiming. Use when asked "who owns X", "who is behind X", "is X sanctioned", "is X connected to Y", "what does X own", or when doing KYC/AML/due-diligence, counterparty checks, supply-chain screening, or offshore/UBO research. Works over the free WhiteIntel corpus (~150M entities, 39 public registries) via MCP tools or plain HTTP.
 license: MIT
 ---
 

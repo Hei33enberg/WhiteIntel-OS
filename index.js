@@ -7,10 +7,10 @@
  * search the corpus of companies and people, and trace ownership chains to the
  * ultimate beneficial owner.
  *
- * Data: ~130.7M entities fused across 31 public/semi-public registries — OpenOwnership,
+ * Data: ~150M entities fused across 39 public/semi-public registries — OpenOwnership,
  * GLEIF, ICIJ Offshore Leaks, SEC EDGAR, Cyprus DRCOR, sanctions/PEP lists and more —
  * cross-source resolved onto one cited identity spine, plus live UK Companies House
- * lookups. Entity count read from /api/public/stats on 2026-08-16 (130,735,728, itself a
+ * lookups. Entity count read from /api/public/stats on 2026-08-20 (150,009,280, itself a
  * planner estimate); the live figure is always at whiteintel.dev/api/public/stats, whose
  * source map is rebuilt by counting registries — new sources appear there on their own.
  *

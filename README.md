@@ -20,8 +20,8 @@ The corporate-ownership & sanctions intelligence layer for AI agents — built f
 [![License: MIT](https://img.shields.io/badge/License-MIT-2f7d4f.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-7c3aed.svg)](https://modelcontextprotocol.io)
 [![Tools](https://img.shields.io/badge/tools-23%20live-00ff7f)](https://whiteintel.dev/developers)
-[![Corpus](https://img.shields.io/badge/corpus-130.7M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
-[![Sources](https://img.shields.io/badge/sources-31%20fused-2f7d4f)](https://whiteintel.dev/sources)
+[![Corpus](https://img.shields.io/badge/corpus-150M%20entities-2f7d4f)](https://whiteintel.dev/coverage)
+[![Sources](https://img.shields.io/badge/sources-39%20fused-2f7d4f)](https://whiteintel.dev/sources)
 [![whiteintel.dev](https://img.shields.io/badge/site-whiteintel.dev-5af082)](https://whiteintel.dev)
 
 </div>
@@ -125,9 +125,9 @@ Check **`get_pricing`** first — it returns the full price list plus this flow 
 
 ## The corpus
 
-**~130.7M entities across 31 fused registries** — every claim cited, every edge traced.
+**~150M entities across 39 fused registries** — every claim cited, every edge traced.
 
-*Measured 2026-08-16 from [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats) (`entities` = 130,735,728, itself a planner estimate). That endpoint rebuilds its source map by counting registries, so it is always the authority — and a new source shows up there without anyone editing this file.*
+*Measured 2026-08-20 from [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats) (`entities` = 150,009,280, itself a planner estimate). That endpoint rebuilds its source map by counting registries, so it is always the authority — and a new source shows up there without anyone editing this file.*
 
 | Source | What | Coverage |
 |---|---|---|
@@ -142,7 +142,7 @@ Check **`get_pricing`** first — it returns the full price list plus this flow 
 | **Brazil RFB** | Brazilian federal revenue — CNPJ register | 🇧🇷 Full |
 | **Cyprus DRCOR** | Cypriot register — **officers only** (see scope note below) | 🇨🇾 Loading |
 | **OFAC / EU / UN / UK** | Consolidated sanctions lists | 🌍 Live |
-| **+ 15 more** | registries, sanctions lists & UBO registers | 🌍 Growing |
+| **+ 24 more** | registries, sanctions lists & UBO registers | 🌍 Growing |
 
 ### Cyprus — what it is, and what it is not
 
@@ -173,7 +173,7 @@ Existing corporate-ownership tools were built for compliance analysts clicking w
 
 ## Data & honesty
 
-- **Live corpus:** ~130.7M entities across 31 fused registries (measured 2026-08-16). Live counts, always authoritative over this file: [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats).
+- **Live corpus:** ~150M entities across 39 fused registries (measured 2026-08-20). Live counts, always authoritative over this file: [whiteintel.dev/api/public/stats](https://whiteintel.dev/api/public/stats).
 - **Sources are not uniformly deep.** A registry in the list means we hold *what that registry publishes* — which for some jurisdictions is the officer layer, not ownership. Cyprus is the clearest case (see the scope note above). Never read presence in the source table as ownership coverage.
 - An absent edge means "not yet observed", not "does not exist".
 - Investigative **decision-support**, not a legal determination of beneficial ownership.
